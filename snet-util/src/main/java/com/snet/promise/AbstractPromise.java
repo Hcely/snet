@@ -1,11 +1,11 @@
 package com.snet.promise;
 
+import com.snet.util.SNode;
+
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
-import com.snet.util.SNode;
-
-@SuppressWarnings({ "unchecked", "rawtypes" })
+@SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractPromise<T extends AbstractPromise<?>> implements Promise<T> {
 	private static final AtomicIntegerFieldUpdater<AbstractPromise> STATE_UPDATER = AtomicIntegerFieldUpdater
 			.newUpdater(AbstractPromise.class, "state");
@@ -80,9 +80,7 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 			if (executor == null)
 				executeListeners0(n);
 			else
-				executor.execute(() -> {
-					executeListeners0(n);
-				});
+				executor.execute(() -> executeListeners0(n));
 		}
 	}
 
@@ -90,7 +88,7 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		for (; n != null; n = n.getNext()) {
 			try {
 				n.getData().onFinish(this);
-			} catch (Throwable e) {
+			} catch (Throwable ignored) {
 			}
 		}
 	}

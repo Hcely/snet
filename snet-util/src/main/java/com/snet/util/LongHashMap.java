@@ -1,8 +1,8 @@
 package com.snet.util;
 
-import java.util.Iterator;
-
 import com.snet.Clearable;
+
+import java.util.Iterator;
 
 @SuppressWarnings("unchecked")
 public class LongHashMap<V> implements Clearable {
@@ -45,7 +45,7 @@ public class LongHashMap<V> implements Clearable {
 	protected Node<V>[] tables;
 	protected int capacity;
 	protected int mask;
-	protected int threahold;
+	protected int threshold;
 	protected int size;
 
 	public LongHashMap() {
@@ -57,17 +57,17 @@ public class LongHashMap<V> implements Clearable {
 	}
 
 	public LongHashMap(int initSize, double factor) {
-		initSize = IntHashMap.ceil2(initSize > 16 ? initSize : 16);
-		this.factor = IntHashMap.camp((int) (factor * 128), 32, 128);
+		initSize = CollUtil.ceil2(initSize > 16 ? initSize : 16);
+		this.factor = CollUtil.camp((int) (factor * 128), 32, 128);
 		this.tables = new Node[initSize];
 		this.capacity = initSize;
 		this.mask = initSize - 1;
-		this.threahold = getThreahold(initSize);
+		this.threshold = getThreshold(initSize);
 		this.size = 0;
 	}
 
-	private final void checkThreahold(final int size) {
-		if (size > threahold && capacity < MAX_TABLE_CAPACITY)
+	private final void checkThreshold(final int size) {
+		if (size > threshold && capacity < MAX_TABLE_CAPACITY)
 			incTable();
 	}
 
@@ -105,11 +105,11 @@ public class LongHashMap<V> implements Clearable {
 		this.tables = newTables;
 		this.capacity = length;
 		this.mask = newMask;
-		this.threahold = getThreahold(length);
+		this.threshold = getThreshold(length);
 	}
 
 	private final Node<V> addNode(final long key, final V value) {
-		checkThreahold(++size);
+		checkThreshold(++size);
 		final Node<V> node = new Node<>(key, value);
 		final int idx = (int) (key & mask);
 		node.next = tables[idx];
@@ -175,7 +175,7 @@ public class LongHashMap<V> implements Clearable {
 	public V remove(final long key) {
 		final int idx = (int) (key & mask);
 		final Node<V>[] tables = this.tables;
-		for (Node<V> node = tables[idx], prev = null; node != null;)
+		for (Node<V> node = tables[idx], prev = null; node != null; )
 			if (node.key == key)
 				return removeNode(tables, idx, prev, node);
 			else {
@@ -188,7 +188,7 @@ public class LongHashMap<V> implements Clearable {
 	public boolean remove(final long key, final V value) {
 		final int idx = (int) (key & mask);
 		final Node<V>[] tables = this.tables;
-		for (Node<V> node = tables[idx], prev = null; node != null;)
+		for (Node<V> node = tables[idx], prev = null; node != null; )
 			if (node.key == key) {
 				if (node.value == null) {
 					if (value == null) {
@@ -226,7 +226,7 @@ public class LongHashMap<V> implements Clearable {
 	public void clear() {
 		final Node<V>[] tables = this.tables;
 		for (int i = 0, len = tables.length; i < len; ++i) {
-			for (Node<V> node = tables[i], tmp; node != null;) {
+			for (Node<V> node = tables[i], tmp; node != null; ) {
 				node.value = null;
 				tmp = node.next;
 				node.next = null;
@@ -237,7 +237,7 @@ public class LongHashMap<V> implements Clearable {
 		size = 0;
 	}
 
-	private final int getThreahold(final int capacity) {
+	private final int getThreshold(final int capacity) {
 		return (capacity * factor) >>> 7;
 	}
 

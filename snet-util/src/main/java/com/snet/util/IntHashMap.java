@@ -1,24 +1,11 @@
 package com.snet.util;
 
-import java.util.Iterator;
-
 import com.snet.Clearable;
+
+import java.util.Iterator;
 
 @SuppressWarnings("unchecked")
 public class IntHashMap<V> implements Clearable {
-	static final int ceil2(int initSize) {
-		int i = 32 - Integer.numberOfLeadingZeros(initSize - 1);
-		return 1 << i;
-	}
-
-	static final int camp(int i, int min, int max) {
-		if (i < min)
-			return min;
-		if (i > max)
-			return max;
-		return i;
-	}
-
 	public static final double DEF_FACTOR = 0.75;
 	public static final int MAX_TABLE_CAPACITY = 1 << 20;
 
@@ -58,7 +45,7 @@ public class IntHashMap<V> implements Clearable {
 	protected Node<V>[] tables;
 	protected int capacity;
 	protected int mask;
-	protected int threahold;
+	protected int threshold;
 	protected int size;
 
 	public IntHashMap() {
@@ -70,17 +57,17 @@ public class IntHashMap<V> implements Clearable {
 	}
 
 	public IntHashMap(int initSize, double factor) {
-		initSize = ceil2(initSize > 16 ? initSize : 16);
-		this.factor = camp((int) (factor * 128), 32, 128);
+		initSize = CollUtil.ceil2(initSize > 16 ? initSize : 16);
+		this.factor = CollUtil.camp((int) (factor * 128), 32, 128);
 		this.tables = new Node[initSize];
 		this.mask = initSize - 1;
 		this.capacity = initSize;
-		this.threahold = getThreahold(initSize);
+		this.threshold = getThreshold(initSize);
 		this.size = 0;
 	}
 
-	private final void checkThreahold(final int size) {
-		if (size > threahold)
+	private final void checkThreshold(final int size) {
+		if (size > threshold)
 			incTable();
 	}
 
@@ -118,11 +105,11 @@ public class IntHashMap<V> implements Clearable {
 		this.tables = newTables;
 		this.capacity = length;
 		this.mask = newMask;
-		this.threahold = getThreahold(length);
+		this.threshold = getThreshold(length);
 	}
 
 	private final Node<V> addNode(final int key, final V value) {
-		checkThreahold(++size);
+		checkThreshold(++size);
 		final Node<V> node = new Node<>(key, value);
 		final int idx = key & mask;
 		node.next = tables[idx];
@@ -188,7 +175,7 @@ public class IntHashMap<V> implements Clearable {
 	public V remove(final int key) {
 		final int idx = key & mask;
 		final Node<V>[] tables = this.tables;
-		for (Node<V> node = tables[idx], prev = null; node != null;)
+		for (Node<V> node = tables[idx], prev = null; node != null; )
 			if (node.key == key)
 				return removeNode(tables, idx, prev, node);
 			else {
@@ -201,7 +188,7 @@ public class IntHashMap<V> implements Clearable {
 	public boolean remove(final int key, final V value) {
 		final int idx = key & mask;
 		final Node<V>[] tables = this.tables;
-		for (Node<V> node = tables[idx], prev = null; node != null;)
+		for (Node<V> node = tables[idx], prev = null; node != null; )
 			if (node.key == key) {
 				if (node.value == null) {
 					if (value == null) {
@@ -239,7 +226,7 @@ public class IntHashMap<V> implements Clearable {
 	public void clear() {
 		final Node<V>[] tables = this.tables;
 		for (int i = 0, len = tables.length; i < len; ++i) {
-			for (Node<V> node = tables[i], tmp; node != null;) {
+			for (Node<V> node = tables[i], tmp; node != null; ) {
 				node.value = null;
 				tmp = node.next;
 				node.next = null;
@@ -250,7 +237,7 @@ public class IntHashMap<V> implements Clearable {
 		size = 0;
 	}
 
-	private final int getThreahold(final int capacity) {
+	private final int getThreshold(final int capacity) {
 		return (capacity * factor) >>> 7;
 	}
 

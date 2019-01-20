@@ -6,5 +6,5 @@ public interface SNetContext extends SNetObject {
 	void addFilter(SNetDataFilter filter);
 
 	void removeFilter(SNetDataFilter filter);
-	
+
 }

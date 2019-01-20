@@ -1,9 +1,9 @@
 package com.snet.core.coder;
 
-import com.snet.buffer.BinaryBuffer;
 import com.snet.core.SNetSession;
 import com.snet.core.frame.SNetFrame;
+import com.snet.io.SNetBuffer;
 
 public interface SNetFrameEncoder<T extends SNetFrame<?>> {
-	BinaryBuffer encode(SNetSession session, T frame);
+	SNetBuffer encode(SNetSession session, T frame);
 }

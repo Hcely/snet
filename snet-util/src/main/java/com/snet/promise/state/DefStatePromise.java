@@ -1,11 +1,11 @@
 package com.snet.promise.state;
 
+import com.snet.promise.PromiseListener;
+import com.snet.util.IntHashMap;
+
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
-import com.snet.promise.PromiseListener;
-import com.snet.util.IntHashMap;
 
 public class DefStatePromise implements StatePromise<DefStatePromise> {
 	protected static final AtomicIntegerFieldUpdater<DefStatePromise> STATE_UPDATER = AtomicIntegerFieldUpdater
@@ -100,7 +100,7 @@ public class DefStatePromise implements StatePromise<DefStatePromise> {
 		for (PromiseListener<DefStatePromise> l : list)
 			try {
 				l.onFinish(this);
-			} catch (Throwable e) {
+			} catch (Throwable ignored) {
 			}
 	}
 

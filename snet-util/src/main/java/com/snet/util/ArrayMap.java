@@ -12,7 +12,7 @@ public class ArrayMap<V> {
 	public static final class DomainIntKeys {
 		private final String domain;
 		private final Map<String, IntKey> keyMap;
-		private volatile int inc = 0;
+		private volatile int inc;
 
 		private DomainIntKeys(String domain) {
 			this.domain = domain;

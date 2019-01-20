@@ -160,7 +160,7 @@ public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>>
 		}
 
 		@Override
-		protected Object doExecute() throws Throwable {
+		protected Object doExecute() {
 			task.run();
 			return null;
 		}
