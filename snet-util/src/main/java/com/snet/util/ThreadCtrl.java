@@ -3,11 +3,11 @@ package com.snet.util;
 import java.util.concurrent.locks.LockSupport;
 
 public class ThreadCtrl {
-	public static final int SKIP_COUNT = 5;
-	public static final int YIELD_COUNT = 10;
-	public static final int PARK_COUNT = 100;
 	public static final int PARK_TIMEOUT = 10000;
 	public static final int WAIT_TIMEOUT = 1;
+	public static final int SKIP_COUNT = 5;
+	public static final int YIELD_COUNT = 10;
+	public static final int PARK_COUNT = 1000000/PARK_TIMEOUT;
 
 	protected volatile int waitCount;
 	protected volatile int skipCount;

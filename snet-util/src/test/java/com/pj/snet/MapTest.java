@@ -1,6 +1,8 @@
 package com.pj.snet;
 
-import java.util.HashMap;
+import com.snet.util.BPTreeMap;
+
+import java.util.Comparator;
 import java.util.Map;
 
 public class MapTest {
@@ -14,7 +16,7 @@ public class MapTest {
 	}
 
 	protected static void test() {
-		Map<Integer, String> map = new HashMap<>();
+		Map<Integer, String> map = new BPTreeMap<>(COMPARATOR);
 		for (int i = 0; i < 1000000; ++i) {
 			map.put(i, "str" + i);
 		}
@@ -24,4 +26,6 @@ public class MapTest {
 		}
 		System.out.println(System.currentTimeMillis() - l);
 	}
+
+	public static final Comparator<Integer> COMPARATOR = Integer::compareTo;
 }

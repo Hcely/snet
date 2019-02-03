@@ -245,8 +245,8 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 			return ((Comparable) o1).compareTo(o2);
 		return Integer.compare(o1.hashCode(), o2.hashCode());
 	};
-	public static final int DEF_FACTOR = 4;
 	private static final BiPredicate<Object, Object> DEF_EQUALS = Objects::equals;
+	public static final int DEF_FACTOR = 4;
 	final Comparator<Object> comparator;
 	final BiPredicate<Object, Object> equalFunc;
 	final int maxSize, threshold, minSize;
@@ -262,8 +262,8 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		this(DEF_FACTOR, comparator);
 	}
 
-	public BPTreeMap(Comparator<?> comparator, BiPredicate<?, ?> predicate) {
-		this(DEF_FACTOR, comparator, predicate);
+	public BPTreeMap(Comparator<?> comparator, BiPredicate<?, ?> equalFunc) {
+		this(DEF_FACTOR, comparator, equalFunc);
 	}
 
 	public BPTreeMap(int factor) {

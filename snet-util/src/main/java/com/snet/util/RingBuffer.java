@@ -12,12 +12,12 @@ public class RingBuffer<T> implements Shutdownable {
 	public static final long DESTROY_ID = -2;
 	public static final int MIN_CAPACITY = 32;
 
-	protected static class NodeCtrl extends ThreadCtrl {
+	protected static class StateCtrl extends ThreadCtrl {
 		protected final int state;
 		protected final int capacity;
 		protected final AtomicLong limit, pos;
 
-		public NodeCtrl(int state, int capacity) {
+		public StateCtrl(int state, int capacity) {
 			this.state = state;
 			this.capacity = capacity;
 			this.limit = new AtomicLong(capacity);
@@ -25,28 +25,30 @@ public class RingBuffer<T> implements Shutdownable {
 		}
 	}
 
-	protected int mask;
-	protected Object[] buffer;
-	protected AtomicIntegerArray stateBuffer;
-	protected NodeCtrl firstNode;
-	protected NodeCtrl[] nodes;
+	protected final int mask;
+	protected final Object[] buffer;
+	protected final AtomicIntegerArray stateBuffer;
+	protected final StateCtrl firstState;
+	protected final StateCtrl[] states;
 	protected boolean destroy;
 	protected boolean loop;
 
-	public RingBuffer(int customSteps, int capacity, Builder<T> builder) {
+	public RingBuffer(int customStateSize, int capacity, Builder<T> builder) {
 		capacity = MapPlus.ceil2(capacity < MIN_CAPACITY ? MIN_CAPACITY : capacity);
+		customStateSize = customStateSize < 1 ? 1 : customStateSize;
+
 		this.mask = capacity - 1;
 		this.buffer = new Object[capacity];
 		this.stateBuffer = new AtomicIntegerArray(capacity);
-		this.firstNode = new NodeCtrl(0, capacity);
-		this.nodes = new NodeCtrl[customSteps + 3];
+		this.firstState = new StateCtrl(0, capacity);
+		this.states = new StateCtrl[customStateSize + 3];
 		this.destroy = false;
 		this.loop = true;
 
-		nodes[1] = nodes[customSteps + 2] = firstNode;
-		for (int i = 0; i < customSteps; ++i)
-			nodes[i + 2] = new NodeCtrl(i + 1, 0);
-		nodes[0] = nodes[customSteps + 1];
+		states[1] = states[customStateSize + 2] = firstState;
+		for (int i = 0; i < customStateSize; ++i)
+			states[i + 2] = new StateCtrl(i + 1, 0);
+		states[0] = states[customStateSize + 1];
 
 		for (int i = 0; i < capacity; ++i) {
 			buffer[i] = builder.build();
@@ -65,17 +67,17 @@ public class RingBuffer<T> implements Shutdownable {
 		loop = false;
 	}
 
-	public long require(int state) {
-		return require(state, -1);
+	public long acquire(int state) {
+		return acquire(state, -1);
 	}
 
-	public long require(int state, int waitCount) {
+	public long acquire(int state, int waitCount) {
 		if (state == 0 && destroy)
 			return DESTROY_ID;
-		return require(state, nodes[state], nodes[state + 1], waitCount < 0 ? -1 : waitCount);
+		return acquire(state, states[state], states[state + 1], waitCount < 0 ? -1 : waitCount);
 	}
 
-	protected long require(int state, NodeCtrl prevCtrl, NodeCtrl ctrl, int waitCount) {
+	protected long acquire(int state, StateCtrl prevCtrl, StateCtrl ctrl, int waitCount) {
 		final AtomicIntegerArray stateBuffer = this.stateBuffer;
 		final AtomicLong limit = ctrl.limit;
 		final AtomicLong pos = ctrl.pos;
@@ -88,7 +90,7 @@ public class RingBuffer<T> implements Shutdownable {
 			} else if (l < (l = tryMoveLimit(stateBuffer, prevCtrl.pos.get() + ctrl.capacity, limit, state))) {
 				if ((id = pos.get()) < l && pos.compareAndSet(id, id + 1))
 					return id;
-			} else if (!destroy || id < firstNode.pos.get()) {
+			} else if (!destroy || id < firstState.pos.get()) {
 				if (waitCount == 0)
 					return EMPTY_ID;
 				if ((count = ctrl.waitCount(count)) > ThreadCtrl.SKIP_COUNT + ThreadCtrl.YIELD_COUNT + ThreadCtrl.PARK_COUNT && waitCount > 0 && --waitCount == 0)
@@ -114,7 +116,7 @@ public class RingBuffer<T> implements Shutdownable {
 	}
 
 	public void publish(int state, long id) {
-		NodeCtrl nextCtrl = nodes[state + 2];
+		StateCtrl nextCtrl = states[state + 2];
 		stateBuffer.set((int) (id & mask), nextCtrl.state);
 		nextCtrl.notifyAllCount(4);
 	}
@@ -125,5 +127,9 @@ public class RingBuffer<T> implements Shutdownable {
 
 	public int getCapacity() {
 		return buffer.length;
+	}
+
+	public int customStateSize() {
+		return states.length - 3;
 	}
 }

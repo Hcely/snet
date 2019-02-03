@@ -80,7 +80,6 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 		reset();
 	}
 
-
 	public SNetHashMap<K, V> setKeyEqualFunc(BiPredicate<Object, Object> keyEqualFunc) {
 		this.keyEqualFunc = keyEqualFunc == null ? DEF_EQUAL : keyEqualFunc;
 		return this;
@@ -125,7 +124,6 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 		this.tables = newTables;
 		this.threshold = getThreshold(newCapacity);
 	}
-
 
 	@Override
 	public EntryPlus<K, V> removeEntity(Object key) {
