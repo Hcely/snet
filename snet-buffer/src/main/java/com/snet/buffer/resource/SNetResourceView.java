@@ -20,11 +20,11 @@ public interface SNetResourceView {
 
 	void write(int bufOff, ByteBuffer buf, int len);
 
-	default void write(int bufOff, SNetBufferResource buf) {
+	default void write(int bufOff, SNetResource buf) {
 		write(bufOff, buf, 0, buf.getCapacity());
 	}
 
-	void write(int bufOff, SNetBufferResource buf, int off, int len);
+	void write(int bufOff, SNetResource buf, int off, int len);
 
 	int write(int bufOff, ReadableByteChannel channel, int len) throws IOException;
 
@@ -38,7 +38,7 @@ public interface SNetResourceView {
 
 	void read(int bufOff, ByteBuffer buf);
 
-	void read(int bufOff, SNetBufferResource buf, int off, int len);
+	void read(int bufOff, SNetResource buf, int off, int len);
 
 	int read(int bufOff, WritableByteChannel channel, int len) throws IOException;
 }

@@ -1,15 +1,12 @@
 package com.snet.promise;
 
-import com.snet.util.SNode;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractPromise<T extends AbstractPromise<?>> implements Promise<T> {
-	private static final AtomicIntegerFieldUpdater<AbstractPromise> STATE_UPDATER = AtomicIntegerFieldUpdater
-			.newUpdater(AbstractPromise.class, "state");
-	protected volatile SNode<PromiseListener> head, tail;
+	private static final AtomicIntegerFieldUpdater<AbstractPromise> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(AbstractPromise.class, "state");
+	protected volatile ListenerNode head, tail;
 	protected static final int INIT = 0;
 	protected static final int COMPLETING = 1;
 	protected volatile int state = INIT;
@@ -60,7 +57,7 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		synchronized (this) {
 			if (isFinish())
 				return false;
-			SNode<PromiseListener> node = new SNode<>(listener);
+			ListenerNode node = new ListenerNode(listener);
 			if (head == null) {
 				head = tail = node;
 			} else {
@@ -75,7 +72,7 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		synchronized (this) {
 			this.notifyAll();
 		}
-		final SNode<PromiseListener> n = head;
+		final ListenerNode n = head;
 		if (n != null) {
 			if (executor == null)
 				executeListeners0(n);
@@ -84,13 +81,35 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		}
 	}
 
-	private void executeListeners0(SNode<PromiseListener> n) {
+	private void executeListeners0(ListenerNode n) {
 		for (; n != null; n = n.getNext()) {
 			try {
-				n.getData().onFinish(this);
+				n.getListener().onFinish(this);
 			} catch (Throwable ignored) {
 			}
 		}
 	}
+
+	protected static class ListenerNode {
+		protected ListenerNode next;
+		protected final PromiseListener listener;
+
+		public ListenerNode(PromiseListener listener) {
+			this.listener = listener;
+		}
+
+		public PromiseListener getListener() {
+			return listener;
+		}
+
+		public ListenerNode getNext() {
+			return next;
+		}
+
+		public void setNext(ListenerNode next) {
+			this.next = next;
+		}
+	}
+
 
 }

@@ -6,16 +6,15 @@ import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class FixedQueue<E> {
 	protected final AtomicReferenceArray<E> array;
-	protected final AtomicLong read, write, limit;
+	protected final AtomicLong read, write;
 	protected final int capacity;
 	protected final int mask;
 
 	public FixedQueue(int capacity) {
-		capacity = CollUtil.ceil2(capacity);
+		capacity = MapPlus.ceil2(capacity);
 		this.array = new AtomicReferenceArray<>(capacity);
 		this.read = new AtomicLong(0);
 		this.write = new AtomicLong(0);
-		this.limit = new AtomicLong(capacity);
 		this.capacity = capacity;
 		this.mask = capacity - 1;
 	}
@@ -24,11 +23,11 @@ public class FixedQueue<E> {
 		if (e == null)
 			throw new NullPointerException("element is null");
 		AtomicReferenceArray<E> array = this.array;
-		AtomicLong write = this.write, limit = this.limit;
-		int mask = this.mask, idx;
-		long lPos = 0, wPos;
+		AtomicLong read = this.read, write = this.write;
+		int mask = this.mask, idx, capacity = this.capacity;
+		long lPos = read.get() + capacity, wPos;
 		while (true) {
-			if ((wPos = write.get()) < lPos || wPos < (lPos = limit.get())) {
+			if ((wPos = write.get()) < lPos || wPos < (lPos = read.get() + capacity)) {
 				if (array.get(idx = (int) (mask & wPos)) == null && write.compareAndSet(wPos, wPos + 1)) {
 					array.set(idx, e);
 					return true;
@@ -39,14 +38,32 @@ public class FixedQueue<E> {
 		}
 	}
 
-	public E first() {
+	public E poll() {
 		AtomicReferenceArray<E> array = this.array;
 		AtomicLong read = this.read, write = this.write;
 		int mask = this.mask, idx;
+		long rPos, wPos = write.get();
+		E result;
+		while (true) {
+			if ((rPos = read.get()) < wPos || rPos < (wPos = write.get())) {
+				if ((result = array.get(idx = (int) (mask & rPos))) != null && read.compareAndSet(rPos, rPos + 1)) {
+					array.set(idx, null);
+					return result;
+				}
+				Thread.yield();
+			} else
+				return null;
+		}
+	}
+
+	public E first() {
+		AtomicReferenceArray<E> array = this.array;
+		AtomicLong read = this.read, write = this.write;
+		int mask = this.mask;
 		long rPos, wPos = 0;
 		while (true) {
 			if ((rPos = read.get()) < wPos || rPos < (wPos = write.get())) {
-				E result = array.get(idx = (int) (mask & rPos));
+				E result = array.get((int) (mask & rPos));
 				if (result != null)
 					return result;
 				Thread.yield();
@@ -55,24 +72,6 @@ public class FixedQueue<E> {
 		}
 	}
 
-	public E poll() {
-		AtomicReferenceArray<E> array = this.array;
-		AtomicLong read = this.read, write = this.write;
-		int mask = this.mask, idx;
-		long rPos, wPos = 0;
-		while (true) {
-			if ((rPos = read.get()) < wPos || rPos < (wPos = write.get())) {
-				E result = array.get(idx = (int) (mask & rPos));
-				if (result != null && read.compareAndSet(rPos, rPos + 1)) {
-					array.set(idx, null);
-					limit.incrementAndGet();
-					return result;
-				}
-				Thread.yield();
-			} else
-				return null;
-		}
-	}
 
 	public int getCapacity() {
 		return capacity;

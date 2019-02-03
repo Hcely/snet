@@ -11,7 +11,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
+public class BPTreeMap<K, V> implements MapPlus<K, V> {
 
 	protected static class BPTNode<K> {
 		protected K key;
@@ -31,7 +31,7 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 		}
 	}
 
-	public static final class LeafNode<K, V> extends BPTNode<K> implements Entry<K, V> {
+	public static final class LeafNode<K, V> extends BPTNode<K> implements EntryPlus<K, V> {
 		protected V value;
 
 		LeafNode(K key, V value) {
@@ -55,23 +55,6 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 			this.value = value;
 			return tmp;
 		}
-
-		public V setValueIfAbsent(V value) {
-			V tmp = this.value;
-			if (tmp == null)
-				this.value = value;
-			return tmp;
-		}
-
-		public boolean compareAndSetValue(V oldValue, V newValue) {
-			V tmp = value;
-			if (Objects.equals(tmp, oldValue)) {
-				value = newValue;
-				return true;
-			}
-			return false;
-		}
-
 
 		public LeafNode<K, V> getPrev() {
 			return (LeafNode<K, V>) prev;
@@ -239,11 +222,12 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 
 		protected BPTNode<K> findNode(Object key) {
 			final Comparator<Object> comparator = this.map.comparator;
+			final BiPredicate<Object, Object> equalFunc = this.map.equalFunc;
 			BPTNode<K> node = head, prev = null;
 			for (int i = 0, size = this.size, hr; i < size; ++i) {
 				if ((hr = comparator.compare(key, node.key)) < 0) {
 					break;
-				} else if (hr == 0 && node.key.equals(key)) {
+				} else if (hr == 0 && equalFunc.test(node.key, key)) {
 					while (node.getClass() != LeafNode.class)
 						node = (((BlockNode<K>) node)).head;
 					prev = node;
@@ -262,7 +246,9 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 		return Integer.compare(o1.hashCode(), o2.hashCode());
 	};
 	public static final int DEF_FACTOR = 4;
+	private static final BiPredicate<Object, Object> DEF_EQUALS = Objects::equals;
 	final Comparator<Object> comparator;
+	final BiPredicate<Object, Object> equalFunc;
 	final int maxSize, threshold, minSize;
 	BlockNode<K> root;
 	LeafNode<K, V> head, tail;
@@ -276,13 +262,23 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 		this(DEF_FACTOR, comparator);
 	}
 
+	public BPTreeMap(Comparator<?> comparator, BiPredicate<?, ?> predicate) {
+		this(DEF_FACTOR, comparator, predicate);
+	}
+
 	public BPTreeMap(int factor) {
 		this(factor, DEF_COMPARATOR);
 	}
 
 	public BPTreeMap(int factor, Comparator<?> comparator) {
+		this(factor, comparator, DEF_EQUALS);
+	}
+
+
+	public BPTreeMap(int factor, Comparator<?> comparator, BiPredicate<?, ?> equalFunc) {
 		factor = factor > 2 ? factor : 2;
 		this.comparator = comparator == null ? DEF_COMPARATOR : (Comparator<Object>) comparator;
+		this.equalFunc = equalFunc == null ? DEF_EQUALS : (BiPredicate<Object, Object>) equalFunc;
 		this.minSize = factor;
 		this.threshold = (factor << 1) + 2;
 		this.maxSize = threshold + 2;
@@ -316,26 +312,28 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 		return node;
 	}
 
+	@Override
 	public LeafNode<K, V> getEntity(Object key) {
-		return getEntity((K) key, false);
+		return getEntity(key, false);
 	}
 
-
-	public LeafNode<K, V> getEntity(K key, boolean absentCreate) {
+	@Override
+	public LeafNode<K, V> getEntity(Object key, boolean absentCreate) {
 		LeafNode<K, V> node = findNode(key);
-		if (node != null && Objects.equals(node.key, key))
+		if (node != null && equalFunc.test(node.key, key))
 			return node;
-		return absentCreate ? addNode(node, key, null) : null;
+		return absentCreate ? addNode(node, (K) key, null) : null;
 	}
 
 	public LeafNode<K, V> addEntity(LeafNode<K, V> prev, K key, V value) {
-		if (prev != null && Objects.equals(prev.key, key)) {
+		if (prev != null && equalFunc.test(prev.key, key)) {
 			prev.setValue(value);
 			return prev;
 		}
 		return addNode(prev, key, value);
 	}
 
+	@Override
 	public LeafNode<K, V> removeEntity(Object key) {
 		LeafNode<K, V> node = getEntity(key);
 		if (node != null)
@@ -343,15 +341,21 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 		return node;
 	}
 
-
 	@Override
-	public boolean isEmpty() {
-		return size == 0;
+	public EntryPlus<K, V> removeEntity(Object key, Object value) {
+		LeafNode<K, V> node = getEntity(key);
+		if (node != null && Objects.equals(node.getValue(), value) && node.remove())
+			return node;
+		return null;
 	}
 
 	@Override
-	public boolean containsKey(Object key) {
-		return getEntity(key) != null;
+	public V putIfAbsent(K key, V value) {
+		LeafNode<K, V> node = findNode(key);
+		if (node != null && equalFunc.test(node.key, key))
+			return node.getValue();
+		addNode(node, key, value);
+		return null;
 	}
 
 	@Override
@@ -364,70 +368,17 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 	}
 
 	@Override
-	public V get(Object key) {
-		LeafNode<K, V> node = getEntity(key);
-		return node == null ? null : node.value;
-	}
-
-	@Override
-	public V getOrDefault(Object key, V defaultValue) {
-		LeafNode<K, V> node = getEntity(key);
-		return node == null ? defaultValue : node.value;
-	}
-
-	@Override
-	public V put(K key, V value) {
-		LeafNode<K, V> node = getEntity(key, true);
-		return node.setValue(value);
-	}
-
-	@Override
-	public V putIfAbsent(K key, V value) {
-		LeafNode<K, V> node = findNode(key);
-		if (node == null || !Objects.equals(node.key, key))
-			node = addNode(node, key, value);
-		return node.value;
-	}
-
-
-	@Override
-	public boolean replace(K key, V oldValue, V newValue) {
-		LeafNode<K, V> node = getEntity(key, false);
-		return node != null && node.compareAndSetValue(oldValue, newValue);
-	}
-
-	@Override
-	public V replace(K key, V value) {
-		LeafNode<K, V> node = getEntity(key, false);
-		return node == null ? null : node.setValue(value);
-	}
-
-	@Override
-	public V remove(Object key) {
-		LeafNode<K, V> node = getEntity(key);
-		if (node == null)
-			return null;
-		node.remove();
-		return node.value;
-	}
-
-	@Override
-	public boolean remove(Object key, Object value) {
-		LeafNode<K, V> node = getEntity(key);
-		return node != null && Objects.equals(node.value, value) && node.remove();
-	}
-
-	@Override
-	public void putAll(Map<? extends K, ? extends V> m) {
-		for (Entry<? extends K, ? extends V> e : m.entrySet())
-			put(e.getKey(), e.getValue());
-	}
-
-	@Override
 	public void clear() {
-		for (LeafNode<K, V> node = head; node != null; node = node.getNext())
-			node.value = null;
+		LeafNode<K, V> node = head, next;
 		reset();
+		for (; node != null; node = next) {
+			next = node.getNext();
+			node.key = null;
+			node.value = null;
+			node.parent = null;
+			node.prev = null;
+			node.next = null;
+		}
 	}
 
 	public void reset() {
@@ -438,33 +389,33 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 
 	@Override
 	public Set<K> keySet() {
-		return new KeySet<>(this);
+		return new KeySet<>(this, e -> (K) e.key, Map::containsKey);
 	}
 
 	@Override
 	public Collection<V> values() {
-		return new ValueColl<>(this);
+		return new Coll<>(this, e -> (V) e.value, Map::containsValue);
 	}
 
 	@Override
 	public Set<Entry<K, V>> entrySet() {
-		return new EntrySet<>(this);
+		return new Coll<>(this, e -> e, (a, b) -> false);
 	}
 
 	@Override
-	public Iterator<Entry<K, V>> iterator() {
+	public Iterator<EntryPlus<K, V>> iterator() {
 		return new It<>(this.head, node -> node);
 	}
 
-	protected static abstract class AbsColl<K> implements Collection<K> {
+	protected static class Coll<K> implements Set<K> {
 		final BPTreeMap map;
-		final Function<LeafNode, K> apply;
-		final BiPredicate<BPTreeMap, Object> predicate;
+		final Function<LeafNode, K> getter;
+		final BiPredicate<BPTreeMap, Object> containFunc;
 
-		protected AbsColl(BPTreeMap map, Function<LeafNode, K> apply, BiPredicate<BPTreeMap, Object> predicate) {
+		protected Coll(BPTreeMap map, Function<LeafNode, K> getter, BiPredicate<BPTreeMap, Object> containFunc) {
 			this.map = map;
-			this.apply = apply;
-			this.predicate = predicate;
+			this.getter = getter;
+			this.containFunc = containFunc;
 		}
 
 		@Override
@@ -479,7 +430,7 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 
 		@Override
 		public Iterator<K> iterator() {
-			return new It<>(map.head, apply);
+			return new It<>(map.head, getter);
 		}
 
 		@Override
@@ -495,15 +446,15 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 
 		@Override
 		public boolean contains(Object o) {
-			return predicate.test(map, o);
+			return containFunc.test(map, o);
 		}
 
 		@Override
 		public boolean containsAll(Collection<?> c) {
 			final BPTreeMap map = this.map;
-			final BiPredicate<BPTreeMap, Object> predicate = this.predicate;
+			final BiPredicate<BPTreeMap, Object> containFunc = this.containFunc;
 			for (Object e : c) {
-				if (!predicate.test(map, e))
+				if (!containFunc.test(map, e))
 					return false;
 			}
 			return true;
@@ -540,20 +491,20 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 				a = (T[]) Array.newInstance(a.getClass().getComponentType(), map.size());
 			int i = 0;
 			final BPTreeMap map = this.map;
-			final Function<LeafNode, K> apply = this.apply;
+			final Function<LeafNode, K> getter = this.getter;
 			for (LeafNode node = map.head; node != null; node = node.getNext(), ++i)
-				a[i] = (T) apply.apply(node);
+				a[i] = (T) getter.apply(node);
 			return a;
 		}
 	}
 
 	protected static class It<K> implements Iterator<K> {
 		protected LeafNode prev, node;
-		protected final Function<LeafNode, K> apply;
+		protected final Function<LeafNode, K> getter;
 
-		public It(LeafNode node, Function<LeafNode, K> apply) {
+		public It(LeafNode node, Function<LeafNode, K> getter) {
 			this.node = node;
-			this.apply = apply;
+			this.getter = getter;
 		}
 
 		@Override
@@ -563,7 +514,7 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 
 		@Override
 		public K next() {
-			K value = apply.apply(node);
+			K value = getter.apply(node);
 			prev = node;
 			node = node.getNext();
 			return value;
@@ -575,12 +526,10 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 		}
 	}
 
-	protected static class KeySet<K> extends AbsColl<K> implements Set<K> {
-
-		protected KeySet(BPTreeMap map) {
-			super(map, node -> (K) node.getKey(), BPTreeMap::containsKey);
+	protected static class KeySet<K> extends Coll<K> {
+		protected KeySet(BPTreeMap map, Function<LeafNode, K> getter, BiPredicate<BPTreeMap, Object> predicate) {
+			super(map, getter, predicate);
 		}
-
 
 		@Override
 		public boolean remove(Object o) {
@@ -609,15 +558,4 @@ public class BPTreeMap<K, V> implements Map<K, V>, Iterable<Map.Entry<K, V>> {
 		}
 	}
 
-	protected static class ValueColl<V> extends AbsColl<V> {
-		protected ValueColl(BPTreeMap map) {
-			super(map, node -> (V) node.getValue(), BPTreeMap::containsValue);
-		}
-	}
-
-	protected static final class EntrySet<K, V> extends AbsColl<Entry<K, V>> implements Set<Entry<K, V>> {
-		protected EntrySet(BPTreeMap map) {
-			super(map, node -> (Entry<K, V>) node, (m, o) -> false);
-		}
-	}
 }

@@ -4,18 +4,18 @@ import com.snet.Releasable;
 import com.snet.buffer.block.DefBufferBlock;
 import com.snet.buffer.block.SNetAllocatableBufferBlock;
 import com.snet.buffer.block.SNetBlockArena;
-import com.snet.buffer.block.SNetBufferBlock;
-import com.snet.buffer.resource.SNetBufferResource;
+import com.snet.buffer.block.SNetBlock;
+import com.snet.buffer.resource.SNetResource;
 
 public class ProxyAllocatableBufferBlock implements SNetAllocatableBufferBlock, Releasable, Comparable<ProxyAllocatableBufferBlock> {
 	protected final SNetBlockArena arena;
-	protected final SNetBufferBlock block;
+	protected final SNetBlock block;
 	protected boolean released;
 	protected int remaining;
 	protected int pos;
 	protected int recycled;
 
-	public ProxyAllocatableBufferBlock(SNetBlockArena arena, SNetBufferBlock block) {
+	public ProxyAllocatableBufferBlock(SNetBlockArena arena, SNetBlock block) {
 		this.arena = arena;
 		this.block = block;
 		this.released = false;
@@ -25,7 +25,7 @@ public class ProxyAllocatableBufferBlock implements SNetAllocatableBufferBlock, 
 	}
 
 	@Override
-	public SNetBufferBlock allocate(int capacity) {
+	public SNetBlock allocate(int capacity) {
 		if (released)
 			return null;
 		if (capacity > remaining)
@@ -37,7 +37,7 @@ public class ProxyAllocatableBufferBlock implements SNetAllocatableBufferBlock, 
 	}
 
 	@Override
-	public void recycle(SNetBufferBlock block) {
+	public void recycle(SNetBlock block) {
 		if (block.getParent() == this)
 			recycled += block.getCapacity();
 	}
@@ -78,7 +78,7 @@ public class ProxyAllocatableBufferBlock implements SNetAllocatableBufferBlock, 
 	}
 
 	@Override
-	public SNetBufferResource getResource() {
+	public SNetResource getResource() {
 		return block.getResource();
 	}
 
@@ -88,7 +88,7 @@ public class ProxyAllocatableBufferBlock implements SNetAllocatableBufferBlock, 
 	}
 
 	@Override
-	public SNetBufferBlock getParent() {
+	public SNetBlock getParent() {
 		return block.getParent();
 	}
 

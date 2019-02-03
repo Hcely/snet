@@ -2,7 +2,7 @@ package com.snet.buffer.block.level;
 
 import com.snet.buffer.block.AbsBlockArena;
 import com.snet.buffer.block.SNetBlockArena;
-import com.snet.buffer.block.SNetBufferBlock;
+import com.snet.buffer.block.SNetBlock;
 
 public abstract class AbsLevelBlockArena extends AbsBlockArena implements SNetLevelBlockArena {
 	protected final SNetBlockArena parent;
@@ -17,7 +17,7 @@ public abstract class AbsLevelBlockArena extends AbsBlockArena implements SNetLe
 	}
 
 	@Override
-	public SNetBufferBlock allocate(int capacity) {
+	public SNetBlock allocate(int capacity) {
 		if (supports(capacity))
 			return allocate0(capacity);
 		return parent.allocate(capacity);
@@ -25,5 +25,5 @@ public abstract class AbsLevelBlockArena extends AbsBlockArena implements SNetLe
 
 	protected abstract boolean supports(int capacity);
 
-	protected abstract SNetBufferBlock allocate0(int capacity);
+	protected abstract SNetBlock allocate0(int capacity);
 }

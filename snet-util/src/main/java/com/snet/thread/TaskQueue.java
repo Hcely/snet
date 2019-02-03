@@ -12,5 +12,9 @@ public interface TaskQueue<T> {
 
 	int size();
 
+	default T pop() {
+		return pop(0);
+	}
+
 	T pop(long timeout);
 }

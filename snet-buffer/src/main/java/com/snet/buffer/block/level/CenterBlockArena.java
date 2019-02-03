@@ -1,8 +1,8 @@
 package com.snet.buffer.block.level;
 
 import com.snet.buffer.block.SNetBlockArena;
-import com.snet.buffer.block.SNetBufferBlock;
-import com.snet.buffer.resource.SNetBufferResource;
+import com.snet.buffer.block.SNetBlock;
+import com.snet.buffer.resource.SNetResource;
 import com.snet.buffer.resource.SNetBufferResourceFactory;
 
 import java.util.Iterator;
@@ -32,8 +32,8 @@ class CenterBlockArena extends AbsLevelBlockArena {
 	}
 
 	@Override
-	public SNetBufferBlock allocate0(int capacity) {
-		for (SNetBufferBlock result; ; ) {
+	public SNetBlock allocate0(int capacity) {
+		for (SNetBlock result; ; ) {
 			if ((result = allocateImpl(capacity)) != null)
 				return result;
 			if ((result = allocateOrCreate(capacity)) != null)
@@ -43,7 +43,7 @@ class CenterBlockArena extends AbsLevelBlockArena {
 	}
 
 
-	private SNetBufferBlock allocateImpl(int capacity) {
+	private SNetBlock allocateImpl(int capacity) {
 		int size = 0, blockSize = this.blockSize;
 		for (Iterator<CenterBufferBlock> it = null; size < blockSize; ) {
 			if ((it == null || !it.hasNext()) && !(it = blocks.iterator()).hasNext())
@@ -54,7 +54,7 @@ class CenterBlockArena extends AbsLevelBlockArena {
 			else if (block.getLock().tryLock()) {
 				try {
 					if (!block.isReleased()) {
-						SNetBufferBlock result = block.allocate(capacity);
+						SNetBlock result = block.allocate(capacity);
 						if (result != null)
 							return result;
 					}
@@ -67,12 +67,12 @@ class CenterBlockArena extends AbsLevelBlockArena {
 		return null;
 	}
 
-	private SNetBufferBlock allocateOrCreate(int capacity) {
+	private SNetBlock allocateOrCreate(int capacity) {
 		if (lock.tryLock())
 			try {
-				SNetBufferBlock result = allocateImpl(capacity);
+				SNetBlock result = allocateImpl(capacity);
 				if (result == null) {
-					SNetBufferResource resource = resourceFactory.create(blockCapacity);
+					SNetResource resource = resourceFactory.create(blockCapacity);
 					CenterBufferBlock block = new CenterBufferBlock(cellSize, resource, this);
 					blocks.add(block);
 					++blockSize;
@@ -85,7 +85,7 @@ class CenterBlockArena extends AbsLevelBlockArena {
 	}
 
 	@Override
-	public void recycle(SNetBufferBlock block) {
+	public void recycle(SNetBlock block) {
 		CenterBufferBlock cBlock = (CenterBufferBlock) block.getParent();
 		try {
 			cBlock.getLock().lock();

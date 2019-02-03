@@ -6,7 +6,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BufferResource implements SNetBufferResource {
+public class BufferResource implements SNetResource {
 	protected AtomicInteger remainCount;
 	protected ByteBuffer wBuffer;
 	protected ByteBuffer rBuffer;
@@ -50,7 +50,7 @@ public class BufferResource implements SNetBufferResource {
 	}
 
 	@Override
-	public void write(int bufOff, SNetBufferResource buf, int off, int len) {
+	public void write(int bufOff, SNetResource buf, int off, int len) {
 		if (buf == this) {
 			wBuffer.position(bufOff).limit(bufOff + len);
 			rBuffer.position(off).limit(off + len);
@@ -87,7 +87,7 @@ public class BufferResource implements SNetBufferResource {
 	}
 
 	@Override
-	public void read(int bufOff, SNetBufferResource buf, int off, int len) {
+	public void read(int bufOff, SNetResource buf, int off, int len) {
 		if (buf == this) {
 			rBuffer.position(bufOff).limit(bufOff + len);
 			wBuffer.position(off).limit(off + len);
@@ -105,20 +105,27 @@ public class BufferResource implements SNetBufferResource {
 	}
 
 	@Override
-	public Object getRaw() {
+	public Object getRawObject() {
 		return wBuffer;
 	}
 
 	@Override
 	public void release() {
-		remainCount.decrementAndGet();
-		wBuffer = null;
-		rBuffer = null;
+		if (wBuffer != null) {
+			remainCount.decrementAndGet();
+			wBuffer = null;
+			rBuffer = null;
+		}
 	}
 
 	@Override
-	public SNetBufferResource duplicate() {
+	public SNetResource duplicate() {
 		return new BufferResource(remainCount, wBuffer.duplicate(), wBuffer.asReadOnlyBuffer());
+	}
+
+	@Override
+	public boolean isReleased() {
+		return wBuffer == null;
 	}
 
 	@Override

@@ -1,11 +1,11 @@
 package com.snet.buffer.block.level;
 
-import com.snet.buffer.block.SNetBufferBlock;
+import com.snet.buffer.block.SNetBlock;
 import com.snet.util.FixedQueue;
 
 abstract class BlockCaches {
 	protected final int blockCapacity;
-	protected final FixedQueue<SNetBufferBlock> cache;
+	protected final FixedQueue<SNetBlock> cache;
 	protected final long idleTime;
 	protected long lastUsingTime;
 
@@ -16,13 +16,13 @@ abstract class BlockCaches {
 		this.lastUsingTime = System.currentTimeMillis();
 	}
 
-	public void add(SNetBufferBlock block) {
+	public void add(SNetBlock block) {
 		if (!cache.add(block))
 			recycleCachedBlock(block);
 	}
 
-	public SNetBufferBlock poll() {
-		SNetBufferBlock bufferBlock = cache.poll();
+	public SNetBlock poll() {
+		SNetBlock bufferBlock = cache.poll();
 		lastUsingTime = System.currentTimeMillis();
 		return bufferBlock;
 	}
@@ -35,13 +35,13 @@ abstract class BlockCaches {
 			return;
 		size = Math.min(size >>> 1, 4);
 		for (int i = 0; i < size; ++i) {
-			SNetBufferBlock block = cache.poll();
+			SNetBlock block = cache.poll();
 			if (block == null)
 				break;
 			recycleCachedBlock(block);
 		}
 	}
 
-	protected abstract void recycleCachedBlock(SNetBufferBlock block);
+	protected abstract void recycleCachedBlock(SNetBlock block);
 
 }

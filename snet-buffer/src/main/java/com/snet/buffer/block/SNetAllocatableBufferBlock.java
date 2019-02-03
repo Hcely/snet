@@ -2,7 +2,7 @@ package com.snet.buffer.block;
 
 import com.snet.buffer.SNetAllocator;
 
-public interface SNetAllocatableBufferBlock extends SNetBufferBlock, SNetAllocator<SNetBufferBlock> {
+public interface SNetAllocatableBufferBlock extends SNetBlock, SNetAllocator<SNetBlock> {
 
 	int getRemaining();
 
@@ -10,5 +10,5 @@ public interface SNetAllocatableBufferBlock extends SNetBufferBlock, SNetAllocat
 
 	void reset();
 
-	void recycle(SNetBufferBlock block);
+	void recycle(SNetBlock block);
 }

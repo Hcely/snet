@@ -57,8 +57,8 @@ public class IntHashMap<V> implements Clearable {
 	}
 
 	public IntHashMap(int initSize, double factor) {
-		initSize = CollUtil.ceil2(initSize > 16 ? initSize : 16);
-		this.factor = CollUtil.camp((int) (factor * 128), 32, 128);
+		initSize = MapPlus.ceil2(initSize > 16 ? initSize : 16);
+		this.factor = MapPlus.camp((int) (factor * 128), 32, 128);
 		this.tables = new Node[initSize];
 		this.mask = initSize - 1;
 		this.capacity = initSize;

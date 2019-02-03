@@ -1,7 +1,7 @@
 package com.snet.buffer.block.level;
 
 import com.snet.buffer.block.SNetBlockArena;
-import com.snet.buffer.block.SNetBufferBlock;
+import com.snet.buffer.block.SNetBlock;
 
 import java.util.Iterator;
 import java.util.TreeSet;
@@ -28,21 +28,21 @@ class AreaBlockArena extends AbsLevelBlockArena {
 	}
 
 	@Override
-	protected SNetBufferBlock allocate0(int capacity) {
+	protected SNetBlock allocate0(int capacity) {
 		int idx = 32 - Integer.numberOfLeadingZeros(capacity - 1);
 		idx = idx > MIN_SHIFT ? (idx - MIN_SHIFT) : 0;
-		SNetBufferBlock block = caches[idx].poll();
+		SNetBlock block = caches[idx].poll();
 		if (block != null)
 			return block;
 		return allocateImpl(capacity);
 	}
 
 
-	protected SNetBufferBlock allocateImpl(int capacity) {
+	protected SNetBlock allocateImpl(int capacity) {
 		try {
 			lock.lock();
 			ProxyAllocatableBufferBlock block = getBlock(capacity);
-			SNetBufferBlock result = block.allocate(capacity);
+			SNetBlock result = block.allocate(capacity);
 			blocks.add(block);
 			return result;
 		} finally {
@@ -58,18 +58,18 @@ class AreaBlockArena extends AbsLevelBlockArena {
 				return block;
 			}
 		}
-		SNetBufferBlock block = parent.allocate(MAX_CAPACITY << 2);
+		SNetBlock block = parent.allocate(MAX_CAPACITY << 2);
 		return new ProxyAllocatableBufferBlock(this, block);
 	}
 
 	@Override
-	public void recycle(SNetBufferBlock block) {
+	public void recycle(SNetBlock block) {
 		int capacity = block.getCapacity();
 		int idx = 32 - Integer.numberOfLeadingZeros(capacity - 1);
 		caches[idx].add(block);
 	}
 
-	protected void recycle0(SNetBufferBlock block) {
+	protected void recycle0(SNetBlock block) {
 		ProxyAllocatableBufferBlock parent = (ProxyAllocatableBufferBlock) block.getParent();
 		try {
 			lock.lock();
@@ -90,7 +90,7 @@ class AreaBlockArena extends AbsLevelBlockArena {
 		}
 
 		@Override
-		protected void recycleCachedBlock(SNetBufferBlock block) {
+		protected void recycleCachedBlock(SNetBlock block) {
 			recycle0(block);
 		}
 	}

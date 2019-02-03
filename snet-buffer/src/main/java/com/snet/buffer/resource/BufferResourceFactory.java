@@ -10,7 +10,7 @@ public class BufferResourceFactory implements SNetBufferResourceFactory {
 	}
 
 	@Override
-	public SNetBufferResource create(int capacity) {
+	public SNetResource create(int capacity) {
 		ByteBuffer buffer = heap ? ByteBuffer.allocate(capacity) : ByteBuffer.allocateDirect(capacity);
 		return new BufferResource(buffer);
 	}

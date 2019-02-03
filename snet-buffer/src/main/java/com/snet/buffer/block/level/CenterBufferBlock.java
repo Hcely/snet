@@ -4,8 +4,8 @@ import com.snet.Releasable;
 import com.snet.buffer.block.DefBufferBlock;
 import com.snet.buffer.block.SNetAllocatableBufferBlock;
 import com.snet.buffer.block.SNetBlockArena;
-import com.snet.buffer.block.SNetBufferBlock;
-import com.snet.buffer.resource.SNetBufferResource;
+import com.snet.buffer.block.SNetBlock;
+import com.snet.buffer.resource.SNetResource;
 
 import java.util.BitSet;
 import java.util.concurrent.locks.Lock;
@@ -21,7 +21,7 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 	protected int remainCell;
 	protected final Lock lock;
 
-	public CenterBufferBlock(int cellLen, SNetBufferResource resource, SNetBlockArena arena) {
+	public CenterBufferBlock(int cellLen, SNetResource resource, SNetBlockArena arena) {
 		super(0, resource.getCapacity(), resource, arena, null);
 		this.cellLenShift = 32 - Integer.numberOfLeadingZeros(cellLen - 1);
 		this.cellLen = 1 << cellLenShift;
@@ -34,7 +34,7 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 	}
 
 	@Override
-	public SNetBufferBlock allocate(int capacity) {
+	public SNetBlock allocate(int capacity) {
 		if (released)
 			return null;
 		int len = capacity >>> cellLenShift;
@@ -59,7 +59,7 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 	}
 
 	@Override
-	public void recycle(SNetBufferBlock block) {
+	public void recycle(SNetBlock block) {
 		if (block.getParent() == this) {
 			int off = (block.getResourceOffset() - resourceOffset) >>> cellLenShift;
 			int len = block.getCapacity() >>> cellLenShift;

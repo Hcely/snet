@@ -6,7 +6,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class BytesResource implements SNetBufferResource {
+public class BytesResource implements SNetResource {
 	protected byte[] buffer;
 	protected AtomicInteger retainCount;
 
@@ -36,13 +36,13 @@ public class BytesResource implements SNetBufferResource {
 	}
 
 	@Override
-	public void write(int bufOff, SNetBufferResource buf, int off, int len) {
+	public void write(int bufOff, SNetResource buf, int off, int len) {
 		buf.read(off, buffer, bufOff, len);
 	}
 
 	@Override
 	public int write(int bufOff, ReadableByteChannel channel, int len) throws IOException {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		int result = 0, l;
 		while (len > 0) {
 			l = len < CACHE_CAPACITY ? len : CACHE_CAPACITY;
@@ -75,18 +75,18 @@ public class BytesResource implements SNetBufferResource {
 	}
 
 	@Override
-	public void read(int bufOff, SNetBufferResource buf, int off, int len) {
+	public void read(int bufOff, SNetResource buf, int off, int len) {
 		buf.write(off, buffer, bufOff, len);
 	}
 
 	@Override
-	public Object getRaw() {
+	public Object getRawObject() {
 		return buffer;
 	}
 
 	@Override
 	public int read(int bufOff, WritableByteChannel channel, int len) throws IOException {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		int result = 0, l;
 		while (len > 0) {
 			l = len < CACHE_CAPACITY ? len : CACHE_CAPACITY;
@@ -109,9 +109,14 @@ public class BytesResource implements SNetBufferResource {
 	}
 
 	@Override
-	public SNetBufferResource duplicate() {
+	public SNetResource duplicate() {
 		retain();
 		return this;
+	}
+
+	@Override
+	public boolean isReleased() {
+		return buffer == null;
 	}
 
 	@Override

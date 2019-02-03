@@ -1,24 +1,21 @@
 package com.snet.buffer.block.level;
 
 import com.snet.buffer.block.SNetBlockArena;
-import com.snet.buffer.block.SNetBufferBlock;
+import com.snet.buffer.block.SNetBlock;
 
-@SuppressWarnings("unchecked")
 public class LocalBlockArena extends AbsLevelBlockArena {
-
 	protected final Thread thread;
-
-	protected final LocalBlockCached[] cacheds;
+	protected final LocalBlockCached[] caches;
 
 	public LocalBlockArena(SNetBlockArena parent, Thread thread) {
 		super(parent);
 		this.thread = thread;
-		this.cacheds = new LocalBlockCached[5];
+		this.caches = new LocalBlockCached[5];
 	}
 
 
 	@Override
-	public SNetBufferBlock allocate(int capacity) {
+	public SNetBlock allocate(int capacity) {
 
 		return null;
 	}
@@ -29,15 +26,15 @@ public class LocalBlockArena extends AbsLevelBlockArena {
 	}
 
 	@Override
-	protected SNetBufferBlock allocate0(int capacity) {
+	protected SNetBlock allocate0(int capacity) {
 		return null;
 	}
 
 	@Override
-	public void recycle(SNetBufferBlock block) {
+	public void recycle(SNetBlock block) {
 	}
 
-	public void recycle(Thread thread, SNetBufferBlock block) {
+	public void recycle(Thread thread, SNetBlock block) {
 
 	}
 
@@ -53,8 +50,8 @@ public class LocalBlockArena extends AbsLevelBlockArena {
 		}
 
 		@Override
-		protected void recycleCachedBlock(SNetBufferBlock block) {
-
+		protected void recycleCachedBlock(SNetBlock block) {
+			parent.recycle(block);
 		}
 	}
 

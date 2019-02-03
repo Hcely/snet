@@ -1,5 +1,5 @@
 package com.snet;
 
-public interface Shutdownable {
+public interface Shutdownable extends Destroyable {
 	void destroyNow();
 }

@@ -7,7 +7,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class FileResource implements SNetBufferResource {
+public class FileResource implements SNetResource {
 	protected long offset;
 	protected int capacity;
 	protected FileChannel fileChannel;
@@ -23,9 +23,10 @@ public class FileResource implements SNetBufferResource {
 		try {
 			fileChannel.force(false);
 			fileChannel.close();
-			fileChannel = null;
 		} catch (IOException e) {
 			throw new RuntimeException(e);
+		} finally {
+			fileChannel = null;
 		}
 	}
 
@@ -49,7 +50,7 @@ public class FileResource implements SNetBufferResource {
 
 	@Override
 	public void write(int bufOff, byte b) {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		buffer.put(b);
 		buffer.flip();
 		write0(bufOff, buffer);
@@ -57,7 +58,7 @@ public class FileResource implements SNetBufferResource {
 
 	@Override
 	public void write(int bufOff, byte[] buf, int off, int len) {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		while (len > 0) {
 			int l = CACHE_CAPACITY;
 			if (len < l)
@@ -81,8 +82,8 @@ public class FileResource implements SNetBufferResource {
 	}
 
 	@Override
-	public void write(int bufOff, SNetBufferResource buf, int off, int len) {
-		Object rawBuf = buf.getRaw();
+	public void write(int bufOff, SNetResource buf, int off, int len) {
+		Object rawBuf = buf.getRawObject();
 		if (rawBuf instanceof byte[]) {
 			write(bufOff, (byte[]) rawBuf, off, len);
 		} else if (rawBuf instanceof ByteBuffer) {
@@ -90,7 +91,7 @@ public class FileResource implements SNetBufferResource {
 			b.position(off).limit(off + len);
 			write0(bufOff, b);
 		} else {
-			ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+			ByteBuffer buffer = SNetResource.getCacheBuffer();
 			int l;
 			while (len > 0) {
 				l = len < CACHE_CAPACITY ? len : CACHE_CAPACITY;
@@ -107,7 +108,7 @@ public class FileResource implements SNetBufferResource {
 
 	@Override
 	public int write(int bufOff, ReadableByteChannel channel, int len) throws IOException {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		int result = 0, l;
 		while (len > 0) {
 			l = len < CACHE_CAPACITY ? len : CACHE_CAPACITY;
@@ -125,7 +126,7 @@ public class FileResource implements SNetBufferResource {
 
 	@Override
 	public byte read(int bufOff) {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		buffer.position(0).limit(1);
 		read0(bufOff, buffer);
 		buffer.flip();
@@ -134,7 +135,7 @@ public class FileResource implements SNetBufferResource {
 
 	@Override
 	public void read(int bufOff, byte[] buf, int off, int len) {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		int l;
 		while (len > 0) {
 			l = len < CACHE_CAPACITY ? len : CACHE_CAPACITY;
@@ -154,8 +155,8 @@ public class FileResource implements SNetBufferResource {
 	}
 
 	@Override
-	public void read(int bufOff, SNetBufferResource buf, int off, int len) {
-		Object rawBuf = buf.getRaw();
+	public void read(int bufOff, SNetResource buf, int off, int len) {
+		Object rawBuf = buf.getRawObject();
 		if (rawBuf instanceof byte[]) {
 			read(bufOff, (byte[]) rawBuf, off, len);
 		} else if (rawBuf instanceof ByteBuffer) {
@@ -163,7 +164,7 @@ public class FileResource implements SNetBufferResource {
 			b.position(off).limit(off + len);
 			read0(bufOff, b);
 		} else {
-			ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+			ByteBuffer buffer = SNetResource.getCacheBuffer();
 			int l;
 			while (len > 0) {
 				l = len < CACHE_CAPACITY ? len : CACHE_CAPACITY;
@@ -180,7 +181,7 @@ public class FileResource implements SNetBufferResource {
 
 	@Override
 	public int read(int bufOff, WritableByteChannel channel, int len) throws IOException {
-		ByteBuffer buffer = SNetBufferResource.getCacheBuffer();
+		ByteBuffer buffer = SNetResource.getCacheBuffer();
 		int result = 0, l;
 		while (len > 0) {
 			l = len < CACHE_CAPACITY ? len : CACHE_CAPACITY;
@@ -202,19 +203,23 @@ public class FileResource implements SNetBufferResource {
 	}
 
 	@Override
-	public Object getRaw() {
+	public Object getRawObject() {
 		return fileChannel;
 	}
 
 	@Override
-	public SNetBufferResource duplicate() {
+	public SNetResource duplicate() {
 		retain();
 		return this;
+	}
+
+	@Override
+	public boolean isReleased() {
+		return fileChannel == null;
 	}
 
 	@Override
 	public void retain() {
 		retainCount.incrementAndGet();
 	}
-
 }
