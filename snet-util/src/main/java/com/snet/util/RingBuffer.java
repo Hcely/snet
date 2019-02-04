@@ -105,10 +105,10 @@ public class RingBuffer<T> implements Shutdownable {
 		long oldL = limit.get(), newL = oldL;
 		int mask = this.mask;
 		while (newL < prevP) {
-			if (stateBuffer.get((int) (++newL & mask)) != state) {
-				--newL;
+			if (stateBuffer.get((int) (newL & mask)) == state)
+				++newL;
+			else
 				break;
-			}
 		}
 		if (oldL < newL)
 			return limit.compareAndSet(oldL, newL) ? newL : limit.get();
