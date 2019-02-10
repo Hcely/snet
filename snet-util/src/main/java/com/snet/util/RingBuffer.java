@@ -12,7 +12,7 @@ public class RingBuffer<T> implements Shutdownable {
 	public static final long DESTROY_ID = -2;
 	public static final int MIN_CAPACITY = 32;
 
-	protected static class StateCtrl extends ThreadCtrl {
+	protected static class StateCtrl extends DefThreadCtrl {
 		protected final int state;
 		protected final int capacity;
 		protected final AtomicLong limit, pos;
@@ -33,22 +33,22 @@ public class RingBuffer<T> implements Shutdownable {
 	protected boolean destroy;
 	protected boolean loop;
 
-	public RingBuffer(int customStateSize, int capacity, Builder<T> builder) {
+	public RingBuffer(int consumerStateSize, int capacity, Builder<T> builder) {
 		capacity = MapPlus.ceil2(capacity < MIN_CAPACITY ? MIN_CAPACITY : capacity);
-		customStateSize = customStateSize < 1 ? 1 : customStateSize;
+		consumerStateSize = consumerStateSize < 1 ? 1 : consumerStateSize;
 
 		this.mask = capacity - 1;
 		this.buffer = new Object[capacity];
 		this.stateBuffer = new AtomicIntegerArray(capacity);
 		this.firstState = new StateCtrl(0, capacity);
-		this.states = new StateCtrl[customStateSize + 3];
+		this.states = new StateCtrl[consumerStateSize + 3];
 		this.destroy = false;
 		this.loop = true;
 
-		states[1] = states[customStateSize + 2] = firstState;
-		for (int i = 0; i < customStateSize; ++i)
+		states[1] = states[consumerStateSize + 2] = firstState;
+		for (int i = 0; i < consumerStateSize; ++i)
 			states[i + 2] = new StateCtrl(i + 1, 0);
-		states[0] = states[customStateSize + 1];
+		states[0] = states[consumerStateSize + 1];
 
 		for (int i = 0; i < capacity; ++i) {
 			buffer[i] = builder.build();
@@ -129,7 +129,12 @@ public class RingBuffer<T> implements Shutdownable {
 		return buffer.length;
 	}
 
-	public int customStateSize() {
+	public int consumerSize() {
 		return states.length - 3;
 	}
+
+	public int size() {
+		return (int) (states[1].pos.get() - states[0].pos.get());
+	}
+
 }
