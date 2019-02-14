@@ -7,7 +7,7 @@ public class SignalPromise extends AbstractPromise<SignalPromise> {
 		if (!casState(INIT, COMPLETING))
 			return false;
 		state = FINISH;
-		executeListeners(null);
+		executeListeners();
 		return true;
 	}
 

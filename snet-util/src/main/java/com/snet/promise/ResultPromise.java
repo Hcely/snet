@@ -21,7 +21,7 @@ public class ResultPromise<V> extends AbstractPromise<ResultPromise<V>> implemen
 		this.statusCode = OK_CODE;
 		this.result = result;
 		state = SUCC;
-		executeListeners(null);
+		executeListeners();
 		return true;
 	}
 
@@ -33,18 +33,18 @@ public class ResultPromise<V> extends AbstractPromise<ResultPromise<V>> implemen
 		return fail(0, null);
 	}
 
-	public boolean fail(int code, String messsage) {
+	public boolean fail(int code, String message) {
 		return fail(0, null, null);
 	}
 
-	public boolean fail(int code, String messsage, Throwable cause) {
+	public boolean fail(int code, String message, Throwable cause) {
 		if (!casState(INIT, COMPLETING))
 			return false;
 		this.statusCode = code;
-		this.message = messsage;
+		this.message = message;
 		this.cause = cause;
 		state = FAIL;
-		executeListeners(null);
+		executeListeners();
 		return true;
 	}
 

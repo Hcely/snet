@@ -11,7 +11,7 @@ public class FixedQueue<E> {
 	protected final int mask;
 
 	public FixedQueue(int capacity) {
-		capacity = MapPlus.ceil2(capacity);
+		capacity = MathUtil.ceil2(capacity);
 		this.array = new AtomicReferenceArray<>(capacity);
 		this.read = new AtomicLong(0);
 		this.write = new AtomicLong(0);

@@ -1,6 +1,5 @@
 package com.snet.promise;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -68,21 +67,11 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		}
 	}
 
-	protected final void executeListeners(Executor executor) {
+	protected final void executeListeners() {
 		synchronized (this) {
 			this.notifyAll();
 		}
-		final ListenerNode n = head;
-		if (n != null) {
-			if (executor == null)
-				executeListeners0(n);
-			else
-				executor.execute(() -> executeListeners0(n));
-		}
-	}
-
-	private void executeListeners0(ListenerNode n) {
-		for (; n != null; n = n.getNext()) {
+		for (ListenerNode n = head; n != null; n = n.getNext()) {
 			try {
 				n.getListener().onFinish(this);
 			} catch (Throwable ignored) {

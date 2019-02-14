@@ -8,20 +8,6 @@ public interface MapPlus<K, V> extends Map<K, V>, Iterable<EntryPlus<K, V>> {
 		return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
 	}
 
-	static int ceil2(int size) {
-		size = size > 0 ? size : 1;
-		int i = 32 - Integer.numberOfLeadingZeros(size - 1);
-		return 1 << i;
-	}
-
-	static int camp(int i, int min, int max) {
-		if (i < min)
-			return min;
-		if (i > max)
-			return max;
-		return i;
-	}
-
 	default EntryPlus<K, V> getEntity(Object key) {
 		return getEntity(key, false);
 	}

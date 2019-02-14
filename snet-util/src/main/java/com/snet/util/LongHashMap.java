@@ -57,8 +57,8 @@ public class LongHashMap<V> implements Clearable {
 	}
 
 	public LongHashMap(int initSize, double factor) {
-		initSize = MapPlus.ceil2(initSize > 16 ? initSize : 16);
-		this.factor = MapPlus.camp((int) (factor * 128), 32, 128);
+		initSize = MathUtil.ceil2(initSize > 16 ? initSize : 16);
+		this.factor = MathUtil.camp((int) (factor * 128), 32, 128);
 		this.tables = new Node[initSize];
 		this.capacity = initSize;
 		this.mask = initSize - 1;

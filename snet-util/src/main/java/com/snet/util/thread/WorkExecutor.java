@@ -5,5 +5,5 @@ import java.util.function.Consumer;
 public interface WorkExecutor<T> {
 	Consumer<T> getConsumer();
 
-	void execute(T work);
+	void execute(T task);
 }

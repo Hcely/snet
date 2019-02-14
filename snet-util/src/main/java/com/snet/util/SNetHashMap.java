@@ -207,7 +207,7 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 	}
 
 	public void reset() {
-		int capacity = MapPlus.ceil2((int) (initCapacity / factor));
+		int capacity = MathUtil.ceil2((int) (initCapacity / factor));
 		this.size = 0;
 		this.tables = new HashNode[capacity];
 		this.threshold = getThreshold(capacity);

@@ -34,7 +34,7 @@ public class RingBuffer<T> implements Shutdownable {
 	protected boolean loop;
 
 	public RingBuffer(int consumerStateSize, int capacity, Builder<T> builder) {
-		capacity = MapPlus.ceil2(capacity < MIN_CAPACITY ? MIN_CAPACITY : capacity);
+		capacity = MathUtil.ceil2(capacity < MIN_CAPACITY ? MIN_CAPACITY : capacity);
 		consumerStateSize = consumerStateSize < 1 ? 1 : consumerStateSize;
 
 		this.mask = capacity - 1;
@@ -118,7 +118,7 @@ public class RingBuffer<T> implements Shutdownable {
 	public void publish(int state, long id) {
 		StateCtrl nextCtrl = states[state + 2];
 		stateBuffer.set((int) (id & mask), nextCtrl.state);
-		nextCtrl.notifyAllCount(4);
+		nextCtrl.notifyAllCount(RuntimeUtil.CORE_PROCESSOR);
 	}
 
 	public T get(long id) {

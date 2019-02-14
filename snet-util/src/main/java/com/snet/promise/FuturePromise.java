@@ -3,7 +3,6 @@ package com.snet.promise;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -16,37 +15,27 @@ public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>>
 		return create(null, task);
 	}
 
-	public static final FuturePromise<?> create(Executor executor, Runnable task) {
-		return new RunnerFuturePromise(executor, task);
+	public static final <V> FuturePromise<V> create(Runnable task, V result) {
+		return new RunnerFuturePromise<>(task, result);
 	}
 
 	public static final <V> FuturePromise<V> create(Callable<V> task) {
-		return create(null, task);
+		return new CallerFuturePromise<>(task);
 	}
 
-	public static final <V> FuturePromise<V> create(Executor executor, Callable<V> task) {
-		return new CallerFuturePromise<>(null, task);
-	}
-
-	protected static final AtomicReferenceFieldUpdater<FuturePromise, Thread> THREAD_UPDATER = AtomicReferenceFieldUpdater
-			.newUpdater(FuturePromise.class, Thread.class, "runner");
+	protected static final AtomicReferenceFieldUpdater<FuturePromise, Thread> THREAD_UPDATER = AtomicReferenceFieldUpdater.newUpdater(FuturePromise.class, Thread.class, "runner");
 	protected static final int FINISH = 2;
 	protected static final int EXCEPTONAL = 3;
 	protected static final int CANCELED = 4;
 	protected static final int INTERRUPTING = 5;
 	protected static final int INTERRUPTED = 6;
 
-	protected final Executor executor;
 	protected volatile Thread runner;
 	protected Throwable cause;
 	protected V result;
 
-	public FuturePromise() {
-		this(null);
-	}
 
-	public FuturePromise(Executor executor) {
-		this.executor = executor;
+	public FuturePromise() {
 	}
 
 	@Override
@@ -58,7 +47,7 @@ public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>>
 					t.interrupt();
 				state = INTERRUPTED;
 			}
-			executeListeners(executor);
+			executeListeners();
 			return true;
 		} else
 			return false;
@@ -116,7 +105,7 @@ public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>>
 					V result = doExecute();
 					finish(result);
 				} catch (Throwable e) {
-					exeception(e);
+					exception(e);
 				}
 		} finally {
 			runner = null;
@@ -125,11 +114,11 @@ public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>>
 
 	}
 
-	protected void exeception(Throwable e) {
+	protected void exception(Throwable e) {
 		if (state == INIT && casState(INIT, COMPLETING)) {
 			this.cause = e;
 			this.state = EXCEPTONAL;
-			executeListeners(null);
+			executeListeners();
 		}
 	}
 
@@ -137,7 +126,7 @@ public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>>
 		if (state == INIT && casState(INIT, COMPLETING)) {
 			this.result = result;
 			this.state = FINISH;
-			executeListeners(null);
+			executeListeners();
 		}
 	}
 
@@ -151,26 +140,25 @@ public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>>
 
 	protected abstract V doExecute() throws Throwable;
 
-	private static final class RunnerFuturePromise extends FuturePromise {
+	private static final class RunnerFuturePromise<V> extends FuturePromise<V> {
 		protected final Runnable task;
 
-		public RunnerFuturePromise(Executor executor, Runnable task) {
-			super(executor);
+		public RunnerFuturePromise(Runnable task, V result) {
 			this.task = task;
+			this.result = result;
 		}
 
 		@Override
-		protected Object doExecute() {
+		protected V doExecute() {
 			task.run();
-			return null;
+			return result;
 		}
 	}
 
 	private static final class CallerFuturePromise<V> extends FuturePromise<V> {
 		protected final Callable<V> task;
 
-		public CallerFuturePromise(Executor executor, Callable<V> task) {
-			super(executor);
+		public CallerFuturePromise(Callable<V> task) {
 			this.task = task;
 		}
 
