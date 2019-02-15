@@ -11,7 +11,7 @@ public class DefBufferBlock implements SNetBlock {
 	protected boolean released;
 
 	public DefBufferBlock(int resourceOffset, int capacity, SNetBlockArena arena, SNetBlock parent) {
-		this(resourceOffset, capacity, parent.getResource(), arena, parent);
+		this(resourceOffset, capacity, parent.getResource().duplicate(), arena, parent);
 	}
 
 	public DefBufferBlock(int resourceOffset, int capacity, SNetResource resource, SNetBlockArena arena, SNetBlock parent) {

@@ -1,4 +1,4 @@
-package com.snet.buffer.block.level;
+package com.snet.buffer.block.impl;
 
 import com.snet.Releasable;
 import com.snet.buffer.block.DefBufferBlock;
@@ -12,20 +12,19 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatableBufferBlock, Releasable {
+	public static final int CELL_LEN_SHIFT = 10;
+	public static final int CELL_LEN = 1 << CELL_LEN_SHIFT;
+
 	protected final BitSet bitmap;
 	protected final int bitSize;
-	protected final int cellLen;
-	protected final int cellLenShift;
 	protected long lastUsingTime;
 	protected int remaining;
 	protected int remainCell;
 	protected final Lock lock;
 
-	public CenterBufferBlock(int cellLen, SNetResource resource, SNetBlockArena arena) {
+	public CenterBufferBlock(SNetResource resource, SNetBlockArena arena) {
 		super(0, resource.getCapacity(), resource, arena, null);
-		this.cellLenShift = 32 - Integer.numberOfLeadingZeros(cellLen - 1);
-		this.cellLen = 1 << cellLenShift;
-		this.bitSize = capacity >>> cellLenShift;
+		this.bitSize = capacity >>> CELL_LEN_SHIFT;
 		this.remaining = capacity;
 		this.remainCell = bitSize;
 		this.bitmap = new BitSet(bitSize);
@@ -37,21 +36,21 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 	public SNetBlock allocate(int capacity) {
 		if (released)
 			return null;
-		int len = capacity >>> cellLenShift;
-		if ((len << cellLenShift) < capacity)
+		int len = capacity >>> CELL_LEN_SHIFT;
+		if ((len << CELL_LEN_SHIFT) < capacity)
 			++len;
-		if ((len << cellLenShift) > remaining)
+		if (len > remainCell)
 			return null;
 		final BitSet bitmap = this.bitmap;
 		for (int i = 0, size = bitSize, max = size - len + 1; i < max; ++i) {
 			for (int off = i, count = 0; i < size && !bitmap.get(i); ++i) {
 				if (++count == len) {
-					int subCapacity = len << cellLenShift;
+					int subCapacity = len << CELL_LEN_SHIFT;
 					bitmap.set(off, off + len);
 					remaining += subCapacity;
 					remainCell -= len;
 					lastUsingTime = System.currentTimeMillis();
-					return new DefBufferBlock(resourceOffset + (off << cellLenShift), subCapacity, arena, this);
+					return new DefBufferBlock(resourceOffset + (off << CELL_LEN_SHIFT), subCapacity, arena, this);
 				}
 			}
 		}
@@ -61,8 +60,8 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 	@Override
 	public void recycle(SNetBlock block) {
 		if (block.getParent() == this) {
-			int off = (block.getResourceOffset() - resourceOffset) >>> cellLenShift;
-			int len = block.getCapacity() >>> cellLenShift;
+			int off = (block.getResourceOffset() - resourceOffset) >>> CELL_LEN_SHIFT;
+			int len = block.getCapacity() >>> CELL_LEN_SHIFT;
 			bitmap.clear(off, off + len);
 			remainCell += len;
 			remaining += block.getCapacity();
@@ -104,7 +103,15 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 		return remainCell;
 	}
 
-	public Lock getLock() {
-		return lock;
+	public void lock() {
+		lock.lock();
+	}
+
+	public boolean tryLock() {
+		return lock.tryLock();
+	}
+
+	public void unlock() {
+		lock.unlock();
 	}
 }

@@ -1,4 +1,4 @@
-package com.snet.buffer.block.level;
+package com.snet.buffer.block.impl;
 
 import com.snet.buffer.block.SNetBlock;
 import com.snet.util.FixedQueue;
@@ -7,12 +7,12 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-public class BlockCaches {
+public class BlockCache {
 	protected final FixedQueue<SNetBlock> cache;
 	protected final long idleTime;
 	protected long lastUsingTime;
 
-	public BlockCaches(int capacity, long idleTime) {
+	public BlockCache(int capacity, long idleTime) {
 		this.cache = new FixedQueue<>(capacity);
 		this.idleTime = idleTime;
 		this.lastUsingTime = System.currentTimeMillis();
@@ -28,13 +28,12 @@ public class BlockCaches {
 		return bufferBlock;
 	}
 
-	public List<SNetBlock> recycleCache() {
+	public void recycleCache(List<SNetBlock> list) {
 		if (lastUsingTime + idleTime > System.currentTimeMillis())
-			return Collections.emptyList();
+			return;
 		int size = cache.size();
 		if (size == 0)
-			return Collections.emptyList();
-		List<SNetBlock> list = new LinkedList<>();
+			return;
 		size = Math.min(size >>> 1, 4);
 		for (int i = 0; i < size; ++i) {
 			SNetBlock block = cache.poll();
@@ -42,7 +41,5 @@ public class BlockCaches {
 				break;
 			list.add(block);
 		}
-		return list;
 	}
-
 }

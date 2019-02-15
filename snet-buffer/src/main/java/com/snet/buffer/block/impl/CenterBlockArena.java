@@ -1,29 +1,28 @@
-package com.snet.buffer.block.level;
+package com.snet.buffer.block.impl;
 
 import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.resource.SNetResource;
 import com.snet.buffer.resource.SNetBufferResourceFactory;
+import com.snet.util.MathUtil;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class CenterBlockArena extends AbsLevelBlockArena {
+class CenterBlockArena extends SNetAbsBlockArena {
 	protected final SNetBufferResourceFactory resourceFactory;
 	protected volatile int blockSize;
 	protected final ConcurrentLinkedQueue<CenterBufferBlock> blocks;
 	protected final int blockCapacity;
-	protected final int cellSize;
 
-	public CenterBlockArena(SNetBlockArena parent, SNetBufferResourceFactory resourceFactory, int blockCapacity, int cellSize) {
+	public CenterBlockArena(SNetBlockArena parent, SNetBufferResourceFactory resourceFactory, int blockCapacity) {
 		super(parent);
 		this.resourceFactory = resourceFactory;
 		this.blockSize = 0;
 		this.blocks = new ConcurrentLinkedQueue<>();
-		this.blockCapacity = 1 << (32 - Integer.numberOfLeadingZeros(blockCapacity - 1));
-		this.cellSize = 1 << (32 - Integer.numberOfLeadingZeros(cellSize - 1));
+		this.blockCapacity = MathUtil.ceil2(blockCapacity);
 	}
 
 	@Override
@@ -42,16 +41,13 @@ class CenterBlockArena extends AbsLevelBlockArena {
 		}
 	}
 
-
 	private SNetBlock allocateImpl(int capacity) {
 		int size = 0, blockSize = this.blockSize;
 		for (Iterator<CenterBufferBlock> it = null; size < blockSize; ) {
 			if ((it == null || !it.hasNext()) && !(it = blocks.iterator()).hasNext())
 				break;
 			CenterBufferBlock block = it.next();
-			if (block.isReleased())
-				++size;
-			else if (block.getLock().tryLock()) {
+			if (block.tryLock()) {
 				try {
 					if (!block.isReleased()) {
 						SNetBlock result = block.allocate(capacity);
@@ -60,7 +56,7 @@ class CenterBlockArena extends AbsLevelBlockArena {
 					}
 				} finally {
 					++size;
-					block.getLock().unlock();
+					block.unlock();
 				}
 			}
 		}
@@ -73,7 +69,7 @@ class CenterBlockArena extends AbsLevelBlockArena {
 				SNetBlock result = allocateImpl(capacity);
 				if (result == null) {
 					SNetResource resource = resourceFactory.create(blockCapacity);
-					CenterBufferBlock block = new CenterBufferBlock(cellSize, resource, this);
+					CenterBufferBlock block = new CenterBufferBlock(resource, this);
 					blocks.add(block);
 					++blockSize;
 				}
@@ -88,14 +84,14 @@ class CenterBlockArena extends AbsLevelBlockArena {
 	public void recycle(SNetBlock block) {
 		CenterBufferBlock cBlock = (CenterBufferBlock) block.getParent();
 		try {
-			cBlock.getLock().lock();
+			cBlock.lock();
 			cBlock.recycle(block);
 		} finally {
-			cBlock.getLock().unlock();
+			cBlock.unlock();
 		}
 	}
 
-	public void monitor() {
+	public void releaseBlock() {
 		final List<CenterBufferBlock> idleBlocks = new LinkedList<>();
 		final long idleDeadline = System.currentTimeMillis() - 10000;
 		for (CenterBufferBlock block : blocks) {
@@ -105,12 +101,12 @@ class CenterBlockArena extends AbsLevelBlockArena {
 
 		if (idleBlocks.size() > 0) {
 			for (CenterBufferBlock block : idleBlocks) {
-				if (block.getLock().tryLock()) {
+				if (block.tryLock()) {
 					try {
 						if (block.getLastUsingTime() < idleDeadline && block.enableReleased())
 							block.release();
 					} finally {
-						block.getLock().unlock();
+						block.unlock();
 					}
 				}
 			}
