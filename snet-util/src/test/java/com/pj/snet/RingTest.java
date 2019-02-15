@@ -6,16 +6,16 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class RingTest {
 	protected static final AtomicLong result = new AtomicLong(0);
-	protected static final int SIZE = 128000000;
+	protected static final int SIZE = 12800000;
 
 	public static void main(String[] args) throws InterruptedException {
-		RingBuffer<Cell> buffer = new RingBuffer<>(2, 1 << 20, Cell::new);
+		RingBuffer<Cell> buffer = new RingBuffer<>(1, 1 << 20, Cell::new);
 		Producer[] producers = new Producer[4];
 
 		for (int i = 0; i < 4; ++i)
 			new Customer(1, buffer).start();
-		for (int i = 0; i < 4; ++i)
-			new Customer(2, buffer).start();
+//		for (int i = 0; i < 4; ++i)
+//			new Customer(2, buffer).start();
 
 		for (int i = 0; i < producers.length; ++i)
 			producers[i] = new Producer(buffer);

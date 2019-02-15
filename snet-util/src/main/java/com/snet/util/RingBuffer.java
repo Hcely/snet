@@ -104,8 +104,8 @@ public class RingBuffer<T> implements Shutdownable {
 
 	protected long tryMoveLimit(AtomicIntegerArray stateBuffer, final long prevP, AtomicLong limit, int state) {
 		long oldL = limit.get(), newL = oldL;
-		int mask = this.mask;
-		while (newL < prevP) {
+		int mask = this.mask, i = 0;
+		while (newL < prevP && ++i < 1000) {
 			if (stateBuffer.get((int) (newL & mask)) == state)
 				++newL;
 			else
