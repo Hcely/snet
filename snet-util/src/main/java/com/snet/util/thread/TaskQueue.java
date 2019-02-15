@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface TaskQueue extends ThreadCtrl {
 
-	int add(Object task);
+	void add(Object task);
 
 	int size();
 

@@ -3,6 +3,7 @@ package com.snet.util;
 import java.util.concurrent.locks.LockSupport;
 
 public class DefThreadCtrl implements ThreadCtrl {
+
 	protected volatile int waitCount;
 	protected volatile int skipCount;
 

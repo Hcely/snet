@@ -4,29 +4,29 @@ import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.block.SNetBlock;
 
 public class LocalBlockArena extends AbsLevelBlockArena {
+	public static final int MIN_SHIFT = 8;
+	public static final int MAX_SHIFT = 12;
+	public static final int MIN_CAPACITY = 1 << MIN_SHIFT;
+	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
 	protected final Thread thread;
-	protected final LocalBlockCached[] caches;
+	protected final BlockCaches[] caches;
 
 	public LocalBlockArena(SNetBlockArena parent, Thread thread) {
 		super(parent);
 		this.thread = thread;
-		this.caches = new LocalBlockCached[5];
-	}
-
-
-	@Override
-	public SNetBlock allocate(int capacity) {
-
-		return null;
+		this.caches = new BlockCaches[MAX_SHIFT - MIN_SHIFT];
+		for (int i = 0, len = MAX_SHIFT - MIN_SHIFT; i < len; ++i)
+			this.caches[i] = new BlockCaches(64 >>> i, 5000);
 	}
 
 	@Override
 	protected boolean supports(int capacity) {
-		return false;
+		return capacity < MAX_CAPACITY + 1;
 	}
 
 	@Override
 	protected SNetBlock allocate0(int capacity) {
+
 		return null;
 	}
 
@@ -42,18 +42,5 @@ public class LocalBlockArena extends AbsLevelBlockArena {
 	public SNetBlockArena getParent() {
 		return parent;
 	}
-
-
-	protected final class LocalBlockCached extends BlockCaches {
-		public LocalBlockCached(int blockCapacity, int capacity, long idleTime) {
-			super(blockCapacity, capacity, idleTime);
-		}
-
-		@Override
-		protected void recycleCachedBlock(SNetBlock block) {
-			parent.recycle(block);
-		}
-	}
-
 
 }

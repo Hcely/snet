@@ -18,14 +18,11 @@ public class DefTaskQueue extends DefThreadCtrl implements TaskQueue {
 	}
 
 	@Override
-	public int add(Object task) {
+	public void add(Object task) {
 		queue.add(task);
-		int i = count.incrementAndGet();
-		if (i == 1)
+		if (count.incrementAndGet() == 1)
 			notifyAllCount(RuntimeUtil.DOUBLE_CORE_PROCESSOR);
-		return i;
 	}
-
 
 	@Override
 	public Object pop() {
@@ -37,7 +34,9 @@ public class DefTaskQueue extends DefThreadCtrl implements TaskQueue {
 
 	@Override
 	public List<Object> remainTasks() {
-		return new LinkedList<>(queue);
+		List<Object> remain = new LinkedList<>(queue);
+		queue.clear();
+		return remain;
 	}
 
 	@Override

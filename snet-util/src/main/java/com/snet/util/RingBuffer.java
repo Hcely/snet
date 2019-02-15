@@ -5,6 +5,7 @@ import com.snet.Shutdownable;
 
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 @SuppressWarnings("unchecked")
 public class RingBuffer<T> implements Shutdownable {
@@ -26,7 +27,7 @@ public class RingBuffer<T> implements Shutdownable {
 	}
 
 	protected final int mask;
-	protected final Object[] buffer;
+	protected final AtomicReferenceArray<T> buffer;
 	protected final AtomicIntegerArray stateBuffer;
 	protected final StateCtrl firstState;
 	protected final StateCtrl[] states;
@@ -38,7 +39,7 @@ public class RingBuffer<T> implements Shutdownable {
 		consumerStateSize = consumerStateSize < 1 ? 1 : consumerStateSize;
 
 		this.mask = capacity - 1;
-		this.buffer = new Object[capacity];
+		this.buffer = new AtomicReferenceArray<>(capacity);
 		this.stateBuffer = new AtomicIntegerArray(capacity);
 		this.firstState = new StateCtrl(0, capacity);
 		this.states = new StateCtrl[consumerStateSize + 3];
@@ -51,20 +52,24 @@ public class RingBuffer<T> implements Shutdownable {
 		states[0] = states[consumerStateSize + 1];
 
 		for (int i = 0; i < capacity; ++i) {
-			buffer[i] = builder.build();
+			buffer.set(i, builder.build());
 			stateBuffer.set(i, 0);
 		}
 	}
 
 	@Override
-	public void destroy() {
+	public synchronized void destroy() {
 		destroy = true;
 	}
 
 	@Override
-	public void destroyNow() {
+	public synchronized void destroyNow() {
 		destroy = true;
 		loop = false;
+	}
+
+	public boolean isDestroy() {
+		return destroy;
 	}
 
 	public long acquire(int state) {
@@ -79,21 +84,17 @@ public class RingBuffer<T> implements Shutdownable {
 
 	protected long acquire(int state, StateCtrl prevCtrl, StateCtrl ctrl, int waitCount) {
 		final AtomicIntegerArray stateBuffer = this.stateBuffer;
-		final AtomicLong limit = ctrl.limit;
-		final AtomicLong pos = ctrl.pos;
+		final AtomicLong limit = ctrl.limit, pos = ctrl.pos, firstPos = firstState.pos;
 		long id, l = limit.get();
 		int count = 0;
 		while (loop) {
-			if ((id = pos.get()) < l || id < (l = limit.get())) {
+			if ((id = pos.get()) < l || id < (l = limit.get()) || id < (l = tryMoveLimit(stateBuffer, prevCtrl.pos.get() + ctrl.capacity, limit, state))) {
 				if (pos.compareAndSet(id, id + 1))
 					return id;
-			} else if (l < (l = tryMoveLimit(stateBuffer, prevCtrl.pos.get() + ctrl.capacity, limit, state))) {
-				if ((id = pos.get()) < l && pos.compareAndSet(id, id + 1))
-					return id;
-			} else if (!destroy || id < firstState.pos.get()) {
+			} else if (!destroy || id < firstPos.get()) {
 				if (waitCount == 0)
 					return EMPTY_ID;
-				if ((count = ctrl.waitCount(count)) > ThreadCtrl.SKIP_COUNT + ThreadCtrl.YIELD_COUNT + ThreadCtrl.PARK_COUNT && waitCount > 0 && --waitCount == 0)
+				if ((count = ctrl.waitCount(count)) > ThreadCtrl.WAIT_COUNT && waitCount > 0 && --waitCount == 0)
 					return EMPTY_ID;
 			} else
 				break;
@@ -101,7 +102,7 @@ public class RingBuffer<T> implements Shutdownable {
 		return DESTROY_ID;
 	}
 
-	protected long tryMoveLimit(AtomicIntegerArray stateBuffer, long prevP, AtomicLong limit, int state) {
+	protected long tryMoveLimit(AtomicIntegerArray stateBuffer, final long prevP, AtomicLong limit, int state) {
 		long oldL = limit.get(), newL = oldL;
 		int mask = this.mask;
 		while (newL < prevP) {
@@ -118,15 +119,15 @@ public class RingBuffer<T> implements Shutdownable {
 	public void publish(int state, long id) {
 		StateCtrl nextCtrl = states[state + 2];
 		stateBuffer.set((int) (id & mask), nextCtrl.state);
-		nextCtrl.notifyAllCount(RuntimeUtil.CORE_PROCESSOR);
+		nextCtrl.notifyAllCount();
 	}
 
 	public T get(long id) {
-		return (T) buffer[(int) (id & mask)];
+		return buffer.get((int) (id & mask));
 	}
 
 	public int getCapacity() {
-		return buffer.length;
+		return buffer.length();
 	}
 
 	public int consumerSize() {

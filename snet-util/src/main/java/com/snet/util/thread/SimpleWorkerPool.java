@@ -17,6 +17,7 @@ public class SimpleWorkerPool<T> implements WorkService<T> {
 		return str;
 	}
 
+	protected boolean destroy;
 	protected final String name;
 	protected final Consumer<T> consumer;
 	protected final TaskQueue queue;
@@ -33,6 +34,7 @@ public class SimpleWorkerPool<T> implements WorkService<T> {
 	public SimpleWorkerPool(int workerSize, Consumer<T> consumer, Provider<TaskQueue> queueProvider) {
 		workerSize = workerSize < 1 ? 1 : workerSize;
 		queueProvider = queueProvider == null ? DefTaskQueue::new : queueProvider;
+		this.destroy = false;
 		this.queue = queueProvider.get();
 		this.name = nextName();
 		this.consumer = consumer;
@@ -50,6 +52,7 @@ public class SimpleWorkerPool<T> implements WorkService<T> {
 
 	@Override
 	public <E> Future<E> submit(T task, E result) {
+		if (destroy) return null;
 		FuturePromise<E> promise = FuturePromise.create(new Worker.TaskRunner(consumer, task), result);
 		queue.add(promise);
 		return promise;
@@ -57,17 +60,20 @@ public class SimpleWorkerPool<T> implements WorkService<T> {
 
 	@Override
 	public void execute(T task) {
+		if (destroy) return;
 		queue.add(task);
 	}
 
 	@Override
-	public void destroyNow() {
+	public synchronized void destroyNow() {
+		destroy = true;
 		for (Worker<T> worker : workers)
 			worker.destroyNow();
 	}
 
 	@Override
-	public void destroy() {
+	public synchronized void destroy() {
+		destroy = true;
 		for (Worker<T> worker : workers)
 			worker.destroy();
 	}

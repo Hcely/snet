@@ -3,22 +3,23 @@ package com.snet.buffer.block.level;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.util.FixedQueue;
 
-abstract class BlockCaches {
-	protected final int blockCapacity;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+
+public class BlockCaches {
 	protected final FixedQueue<SNetBlock> cache;
 	protected final long idleTime;
 	protected long lastUsingTime;
 
-	public BlockCaches(int blockCapacity, int capacity, long idleTime) {
-		this.blockCapacity = blockCapacity;
+	public BlockCaches(int capacity, long idleTime) {
 		this.cache = new FixedQueue<>(capacity);
 		this.idleTime = idleTime;
 		this.lastUsingTime = System.currentTimeMillis();
 	}
 
-	public void add(SNetBlock block) {
-		if (!cache.add(block))
-			recycleCachedBlock(block);
+	public boolean add(SNetBlock block) {
+		return cache.add(block);
 	}
 
 	public SNetBlock poll() {
@@ -27,21 +28,21 @@ abstract class BlockCaches {
 		return bufferBlock;
 	}
 
-	public void recycleCache() {
+	public List<SNetBlock> recycleCache() {
 		if (lastUsingTime + idleTime > System.currentTimeMillis())
-			return;
+			return Collections.emptyList();
 		int size = cache.size();
 		if (size == 0)
-			return;
+			return Collections.emptyList();
+		List<SNetBlock> list = new LinkedList<>();
 		size = Math.min(size >>> 1, 4);
 		for (int i = 0; i < size; ++i) {
 			SNetBlock block = cache.poll();
 			if (block == null)
 				break;
-			recycleCachedBlock(block);
+			list.add(block);
 		}
+		return list;
 	}
-
-	protected abstract void recycleCachedBlock(SNetBlock block);
 
 }

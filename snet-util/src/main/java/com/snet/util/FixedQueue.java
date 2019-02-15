@@ -32,7 +32,6 @@ public class FixedQueue<E> {
 					array.set(idx, e);
 					return true;
 				}
-				Thread.yield();
 			} else
 				return false;
 		}
@@ -72,7 +71,6 @@ public class FixedQueue<E> {
 		}
 	}
 
-
 	public int getCapacity() {
 		return capacity;
 	}
@@ -84,7 +82,6 @@ public class FixedQueue<E> {
 	public boolean isEmpty() {
 		return write.get() == read.get();
 	}
-
 
 	public Enumeration<E> enumeration() {
 		return new En<>(array, read, write, mask);
@@ -105,7 +102,6 @@ public class FixedQueue<E> {
 			this.wPos = write.get();
 			this.rPos = 0;
 		}
-
 
 		@Override
 		public boolean hasMoreElements() {

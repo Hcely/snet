@@ -19,7 +19,7 @@ class AreaBlockArena extends AbsLevelBlockArena {
 		this.caches = new BlockCaches[MAX_SHIFT - MIN_SHIFT];
 		this.blocks = new TreeSet<>();
 		for (int i = 0; i < MAX_SHIFT - MIN_SHIFT; ++i)
-			caches[i] = new ArenaBlockCached(1 << (i + MIN_SHIFT), 64, 500 * (10 - i));
+			caches[i] = new BlockCaches(64, 15000);
 	}
 
 	@Override
@@ -36,7 +36,6 @@ class AreaBlockArena extends AbsLevelBlockArena {
 			return block;
 		return allocateImpl(capacity);
 	}
-
 
 	protected SNetBlock allocateImpl(int capacity) {
 		try {
@@ -83,17 +82,5 @@ class AreaBlockArena extends AbsLevelBlockArena {
 			lock.unlock();
 		}
 	}
-
-	protected final class ArenaBlockCached extends BlockCaches {
-		public ArenaBlockCached(int blockCapacity, int capacity, long idleTime) {
-			super(blockCapacity, capacity, idleTime);
-		}
-
-		@Override
-		protected void recycleCachedBlock(SNetBlock block) {
-			recycle0(block);
-		}
-	}
-
 
 }
