@@ -4,7 +4,6 @@ import com.snet.buffer.block.BlockArenaUtil;
 import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.block.SNetBlock;
 
-import java.util.Iterator;
 import java.util.TreeSet;
 
 class AreaBlockArena extends SNetAbsBlockArena {
@@ -13,14 +12,15 @@ class AreaBlockArena extends SNetAbsBlockArena {
 	public static final int MIN_CAPACITY = 1 << MIN_SHIFT;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
 	protected final BlockCache[] caches;
-	protected final TreeSet<AreaBufferBlock> blocks;
+	protected final TreeSet<AreaBlock> blocks;
 
 	public AreaBlockArena(SNetBlockArena parent) {
 		super(parent);
-		this.caches = new BlockCache[MAX_SHIFT - MIN_SHIFT];
+		final int len = MAX_SHIFT - MIN_SHIFT;
+		this.caches = new BlockCache[len];
 		this.blocks = new TreeSet<>();
-		for (int i = 0; i < MAX_SHIFT - MIN_SHIFT; ++i)
-			caches[i] = new BlockCache(64, 15000);
+		for (int i = 0; i < len; ++i)
+			caches[i] = new BlockCache(128 * (len - i), 10000);
 	}
 
 	@Override

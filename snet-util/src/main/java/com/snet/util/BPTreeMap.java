@@ -295,7 +295,7 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		return size;
 	}
 
-	public LeafNode<K, V> findNode(Object key) {
+	public LeafNode<K, V> getOrPrev(Object key) {
 		BlockNode<K> parent = root;
 		while (true) {
 			BPTNode<K> prev = parent.findNode(key);
@@ -319,10 +319,10 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 
 	@Override
 	public LeafNode<K, V> getEntity(Object key, boolean absentCreate) {
-		LeafNode<K, V> node = findNode(key);
-		if (node != null && equalFunc.test(node.key, key))
-			return node;
-		return absentCreate ? addNode(node, (K) key, null) : null;
+		LeafNode<K, V> prev = getOrPrev(key);
+		if (prev != null && equalFunc.test(prev.key, key))
+			return prev;
+		return absentCreate ? addNode(prev, (K) key, null) : null;
 	}
 
 	public LeafNode<K, V> addEntity(LeafNode<K, V> prev, K key, V value) {
@@ -351,10 +351,10 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 
 	@Override
 	public V putIfAbsent(K key, V value) {
-		LeafNode<K, V> node = findNode(key);
-		if (node != null && equalFunc.test(node.key, key))
-			return node.getValue();
-		addNode(node, key, value);
+		LeafNode<K, V> prev = getOrPrev(key);
+		if (prev != null && equalFunc.test(prev.key, key))
+			return prev.getValue();
+		addNode(prev, key, value);
 		return null;
 	}
 

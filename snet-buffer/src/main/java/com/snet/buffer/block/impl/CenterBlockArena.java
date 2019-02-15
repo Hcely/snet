@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 class CenterBlockArena extends SNetAbsBlockArena {
 	protected final SNetBufferResourceFactory resourceFactory;
 	protected volatile int blockSize;
-	protected final ConcurrentLinkedQueue<CenterBufferBlock> blocks;
+	protected final ConcurrentLinkedQueue<CenterBlock> blocks;
 	protected final int blockCapacity;
 
 	public CenterBlockArena(SNetBlockArena parent, SNetBufferResourceFactory resourceFactory, int blockCapacity) {
@@ -43,10 +43,10 @@ class CenterBlockArena extends SNetAbsBlockArena {
 
 	private SNetBlock allocateImpl(int capacity) {
 		int size = 0, blockSize = this.blockSize;
-		for (Iterator<CenterBufferBlock> it = null; size < blockSize; ) {
+		for (Iterator<CenterBlock> it = null; size < blockSize; ) {
 			if ((it == null || !it.hasNext()) && !(it = blocks.iterator()).hasNext())
 				break;
-			CenterBufferBlock block = it.next();
+			CenterBlock block = it.next();
 			if (block.tryLock()) {
 				try {
 					if (!block.isReleased()) {
@@ -69,7 +69,7 @@ class CenterBlockArena extends SNetAbsBlockArena {
 				SNetBlock result = allocateImpl(capacity);
 				if (result == null) {
 					SNetResource resource = resourceFactory.create(blockCapacity);
-					CenterBufferBlock block = new CenterBufferBlock(resource, this);
+					CenterBlock block = new CenterBlock(resource, this);
 					blocks.add(block);
 					++blockSize;
 				}
@@ -82,7 +82,7 @@ class CenterBlockArena extends SNetAbsBlockArena {
 
 	@Override
 	public void recycle(SNetBlock block) {
-		CenterBufferBlock cBlock = (CenterBufferBlock) block.getParent();
+		CenterBlock cBlock = (CenterBlock) block.getParent();
 		try {
 			cBlock.lock();
 			cBlock.recycle(block);
@@ -92,15 +92,15 @@ class CenterBlockArena extends SNetAbsBlockArena {
 	}
 
 	public void releaseBlock() {
-		final List<CenterBufferBlock> idleBlocks = new LinkedList<>();
+		final List<CenterBlock> idleBlocks = new LinkedList<>();
 		final long idleDeadline = System.currentTimeMillis() - 10000;
-		for (CenterBufferBlock block : blocks) {
+		for (CenterBlock block : blocks) {
 			if (block.enableReleased() && block.getLastUsingTime() < idleDeadline)
 				idleBlocks.add(block);
 		}
 
 		if (idleBlocks.size() > 0) {
-			for (CenterBufferBlock block : idleBlocks) {
+			for (CenterBlock block : idleBlocks) {
 				if (block.tryLock()) {
 					try {
 						if (block.getLastUsingTime() < idleDeadline && block.enableReleased())
@@ -112,8 +112,8 @@ class CenterBlockArena extends SNetAbsBlockArena {
 			}
 			try {
 				lock.lock();
-				for (Iterator<CenterBufferBlock> it = blocks.iterator(); it.hasNext(); ) {
-					CenterBufferBlock block = it.next();
+				for (Iterator<CenterBlock> it = blocks.iterator(); it.hasNext(); ) {
+					CenterBlock block = it.next();
 					if (block.isReleased()) {
 						--blockSize;
 						it.remove();

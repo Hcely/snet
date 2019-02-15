@@ -1,12 +1,21 @@
 package com.snet.buffer.block.impl;
 
-import com.snet.buffer.block.SNetAllocatableBufferBlock;
+import com.snet.buffer.block.SNetAllocatableBlock;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.resource.SNetResource;
+import com.snet.util.BPTreeMap;
 
-public class AreaBufferBlock implements SNetAllocatableBufferBlock {
+public class AreaBlock implements SNetAllocatableBlock {
+	protected final AreaBlockArena arena;
+	protected final SNetBlock block;
+	protected final BPTreeMap<Long,Void> subBlocks;
 
+	public AreaBlock(AreaBlockArena arena, SNetBlock block) {
+		this.arena = arena;
+		this.block = block;
+		this.subBlocks=new BPTreeMap<>();
+	}
 
 	@Override
 	public int getRemaining() {

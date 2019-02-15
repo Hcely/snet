@@ -13,12 +13,16 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 	protected final Thread thread;
 	protected final BlockCache[] caches;
 
-	public LocalBlockArena(SNetBlockArena parent, Thread thread) {
+	public LocalBlockArena(SNetBlockArena parent) {
 		super(parent);
-		this.thread = thread;
+		this.thread = Thread.currentThread();
 		this.caches = new BlockCache[MAX_SHIFT - BlockArenaUtil.MIN_SHIFT];
 		for (int i = 0, len = MAX_SHIFT - BlockArenaUtil.MIN_SHIFT; i < len; ++i)
 			this.caches[i] = new BlockCache(64 >>> i, 5000);
+	}
+
+	public Thread getThread() {
+		return thread;
 	}
 
 	@Override

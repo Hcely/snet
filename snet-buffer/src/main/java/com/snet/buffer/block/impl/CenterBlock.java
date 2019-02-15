@@ -1,8 +1,8 @@
 package com.snet.buffer.block.impl;
 
 import com.snet.Releasable;
-import com.snet.buffer.block.DefBufferBlock;
-import com.snet.buffer.block.SNetAllocatableBufferBlock;
+import com.snet.buffer.block.DefBlock;
+import com.snet.buffer.block.SNetAllocatableBlock;
 import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.resource.SNetResource;
@@ -11,7 +11,7 @@ import java.util.BitSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatableBufferBlock, Releasable {
+public class CenterBlock extends DefBlock implements SNetAllocatableBlock, Releasable {
 	public static final int CELL_LEN_SHIFT = 10;
 	public static final int CELL_LEN = 1 << CELL_LEN_SHIFT;
 
@@ -22,7 +22,7 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 	protected int remainCell;
 	protected final Lock lock;
 
-	public CenterBufferBlock(SNetResource resource, SNetBlockArena arena) {
+	public CenterBlock(SNetResource resource, SNetBlockArena arena) {
 		super(0, resource.getCapacity(), resource, arena, null);
 		this.bitSize = capacity >>> CELL_LEN_SHIFT;
 		this.remaining = capacity;
@@ -50,7 +50,7 @@ public class CenterBufferBlock extends DefBufferBlock implements SNetAllocatable
 					remaining += subCapacity;
 					remainCell -= len;
 					lastUsingTime = System.currentTimeMillis();
-					return new DefBufferBlock(resourceOffset + (off << CELL_LEN_SHIFT), subCapacity, arena, this);
+					return new DefBlock(resourceOffset + (off << CELL_LEN_SHIFT), subCapacity, arena, this);
 				}
 			}
 		}

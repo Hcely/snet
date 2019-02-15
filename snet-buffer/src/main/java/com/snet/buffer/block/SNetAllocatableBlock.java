@@ -2,7 +2,7 @@ package com.snet.buffer.block;
 
 import com.snet.buffer.SNetAllocator;
 
-public interface SNetAllocatableBufferBlock extends SNetBlock, SNetAllocator<SNetBlock> {
+public interface SNetAllocatableBlock extends SNetBlock, SNetAllocator<SNetBlock> {
 
 	int getRemaining();
 

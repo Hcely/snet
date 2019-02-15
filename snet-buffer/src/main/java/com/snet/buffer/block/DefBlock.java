@@ -2,7 +2,7 @@ package com.snet.buffer.block;
 
 import com.snet.buffer.resource.SNetResource;
 
-public class DefBufferBlock implements SNetBlock {
+public class DefBlock implements SNetBlock {
 	protected final int resourceOffset;
 	protected final int capacity;
 	protected final SNetResource resource;
@@ -10,11 +10,11 @@ public class DefBufferBlock implements SNetBlock {
 	protected final SNetBlock parent;
 	protected boolean released;
 
-	public DefBufferBlock(int resourceOffset, int capacity, SNetBlockArena arena, SNetBlock parent) {
+	public DefBlock(int resourceOffset, int capacity, SNetBlockArena arena, SNetBlock parent) {
 		this(resourceOffset, capacity, parent.getResource().duplicate(), arena, parent);
 	}
 
-	public DefBufferBlock(int resourceOffset, int capacity, SNetResource resource, SNetBlockArena arena, SNetBlock parent) {
+	public DefBlock(int resourceOffset, int capacity, SNetResource resource, SNetBlockArena arena, SNetBlock parent) {
 		this.resourceOffset = resourceOffset;
 		this.capacity = capacity;
 		this.resource = resource;

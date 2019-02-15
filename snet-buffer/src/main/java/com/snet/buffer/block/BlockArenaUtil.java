@@ -10,4 +10,8 @@ public class BlockArenaUtil {
 		int i = 32 - Integer.numberOfLeadingZeros(capacity - 1);
 		return i - MIN_SHIFT;
 	}
+
+	public static final SNetBlock[] divide(SNetBlock block, int size) {
+		return null;
+	}
 }
