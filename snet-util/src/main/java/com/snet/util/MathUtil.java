@@ -7,6 +7,13 @@ public class MathUtil {
 		return 1 << i;
 	}
 
+	public static int ceilFactor(int size, int factor) {
+		if (size < factor)
+			return factor;
+		int i = (size / factor) * factor;
+		return i < size ? (i + factor) : i;
+	}
+
 	public static int camp(int i, int min, int max) {
 		if (i < min)
 			return min;

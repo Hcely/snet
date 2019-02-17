@@ -2,7 +2,6 @@ package com.snet.util;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
@@ -220,12 +219,12 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 			}
 		}
 
-		protected BPTNode<K> findNode(Object key) {
-			final Comparator<Object> comparator = this.map.comparator;
+		protected BPTNode<K> floorEntity(Object key) {
+			final KeyComparator<K, Object> comparator = this.map.comparator;
 			final BiPredicate<Object, Object> equalFunc = this.map.equalFunc;
 			BPTNode<K> node = head, prev = null;
 			for (int i = 0, size = this.size, hr; i < size; ++i) {
-				if ((hr = comparator.compare(key, node.key)) < 0) {
+				if ((hr = comparator.compare(node.key, key)) > 0) {
 					break;
 				} else if (hr == 0 && equalFunc.test(node.key, key)) {
 					while (node.getClass() != LeafNode.class)
@@ -240,14 +239,16 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		}
 	}
 
-	private static final Comparator<Object> DEF_COMPARATOR = (o1, o2) -> {
+	public static final KeyComparator<Object, Object> DEF_COMPARATOR = (o1, o2) -> {
 		if (o1 instanceof Comparable)
 			return ((Comparable) o1).compareTo(o2);
 		return Integer.compare(o1.hashCode(), o2.hashCode());
 	};
-	private static final BiPredicate<Object, Object> DEF_EQUALS = Objects::equals;
+	public static final BiPredicate<Object, Object> DEF_EQUALS = Objects::equals;
+	public static final BiPredicate<Object, Object> IDENTITY_EQUALS = (o, o2) -> o == o2;
+
 	public static final int DEF_FACTOR = 4;
-	final Comparator<Object> comparator;
+	final KeyComparator<K, Object> comparator;
 	final BiPredicate<Object, Object> equalFunc;
 	final int maxSize, threshold, minSize;
 	BlockNode<K> root;
@@ -255,29 +256,29 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 	int size;
 
 	public BPTreeMap() {
-		this(DEF_FACTOR, DEF_COMPARATOR);
+		this(DEF_FACTOR, null);
 	}
 
-	public BPTreeMap(Comparator<?> comparator) {
+	public BPTreeMap(KeyComparator<K, ?> comparator) {
 		this(DEF_FACTOR, comparator);
 	}
 
-	public BPTreeMap(Comparator<?> comparator, BiPredicate<?, ?> equalFunc) {
+	public BPTreeMap(KeyComparator<K, ?> comparator, BiPredicate<?, ?> equalFunc) {
 		this(DEF_FACTOR, comparator, equalFunc);
 	}
 
 	public BPTreeMap(int factor) {
-		this(factor, DEF_COMPARATOR);
+		this(factor, null);
 	}
 
-	public BPTreeMap(int factor, Comparator<?> comparator) {
+	public BPTreeMap(int factor, KeyComparator<K, ?> comparator) {
 		this(factor, comparator, DEF_EQUALS);
 	}
 
 
-	public BPTreeMap(int factor, Comparator<?> comparator, BiPredicate<?, ?> equalFunc) {
+	public BPTreeMap(int factor, KeyComparator<K, ?> comparator, BiPredicate<?, ?> equalFunc) {
 		factor = factor > 2 ? factor : 2;
-		this.comparator = comparator == null ? DEF_COMPARATOR : (Comparator<Object>) comparator;
+		this.comparator = comparator == null ? (KeyComparator<K, Object>) DEF_COMPARATOR : (KeyComparator<K, Object>) comparator;
 		this.equalFunc = equalFunc == null ? DEF_EQUALS : (BiPredicate<Object, Object>) equalFunc;
 		this.minSize = factor;
 		this.threshold = (factor << 1) + 2;
@@ -295,21 +296,37 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		return size;
 	}
 
-	public LeafNode<K, V> getOrPrev(Object key) {
-		BlockNode<K> parent = root;
-		while (true) {
-			BPTNode<K> prev = parent.findNode(key);
-			if (prev == null || prev.getClass() == LeafNode.class)
-				return (LeafNode<K, V>) prev;
-			parent = (BlockNode<K>) prev;
-		}
-	}
 
 	protected LeafNode<K, V> addNode(LeafNode<K, V> prev, K key, V value) {
 		LeafNode<K, V> node = new LeafNode<>(key, value);
 		BlockNode<K> parent = prev != null ? prev.parent : (head == null ? root : head.parent);
 		parent.addNode(prev, node);
 		return node;
+	}
+
+	public LeafNode<K, V> firstEntity() {
+		return head;
+	}
+
+	public LeafNode<K, V> lastEntity() {
+		return tail;
+	}
+
+	public LeafNode<K, V> floorEntity(Object key) {
+		BlockNode<K> parent = root;
+		while (true) {
+			BPTNode<K> prev = parent.floorEntity(key);
+			if (prev == null || prev.getClass() == LeafNode.class)
+				return (LeafNode<K, V>) prev;
+			parent = (BlockNode<K>) prev;
+		}
+	}
+
+	public LeafNode<K, V> ceilEntity(Object key) {
+		LeafNode<K, V> prev = floorEntity(key);
+		if (prev == null)
+			return head;
+		return comparator.compare(prev.key, key) == 0 ? prev : prev.getNext();
 	}
 
 	@Override
@@ -319,18 +336,10 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 
 	@Override
 	public LeafNode<K, V> getEntity(Object key, boolean absentCreate) {
-		LeafNode<K, V> prev = getOrPrev(key);
+		LeafNode<K, V> prev = floorEntity(key);
 		if (prev != null && equalFunc.test(prev.key, key))
 			return prev;
 		return absentCreate ? addNode(prev, (K) key, null) : null;
-	}
-
-	public LeafNode<K, V> addEntity(LeafNode<K, V> prev, K key, V value) {
-		if (prev != null && equalFunc.test(prev.key, key)) {
-			prev.setValue(value);
-			return prev;
-		}
-		return addNode(prev, key, value);
 	}
 
 	@Override
@@ -351,7 +360,7 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 
 	@Override
 	public V putIfAbsent(K key, V value) {
-		LeafNode<K, V> prev = getOrPrev(key);
+		LeafNode<K, V> prev = floorEntity(key);
 		if (prev != null && equalFunc.test(prev.key, key))
 			return prev.getValue();
 		addNode(prev, key, value);
@@ -405,6 +414,10 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 	@Override
 	public Iterator<EntryPlus<K, V>> iterator() {
 		return new It<>(this.head, node -> node);
+	}
+
+	public interface KeyComparator<K, E> {
+		int compare(K key, E keyObj);
 	}
 
 	protected static class Coll<K> implements Set<K> {

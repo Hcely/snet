@@ -8,7 +8,5 @@ public interface SNetAllocatableBlock extends SNetBlock, SNetAllocator<SNetBlock
 
 	boolean enableReleased();
 
-	void reset();
-
 	void recycle(SNetBlock block);
 }

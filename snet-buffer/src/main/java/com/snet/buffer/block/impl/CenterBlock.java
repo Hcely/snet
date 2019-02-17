@@ -39,23 +39,30 @@ public class CenterBlock extends DefBlock implements SNetAllocatableBlock, Relea
 		int len = capacity >>> CELL_LEN_SHIFT;
 		if ((len << CELL_LEN_SHIFT) < capacity)
 			++len;
+
 		if (len > remainCell)
 			return null;
 		final BitSet bitmap = this.bitmap;
-		for (int i = 0, size = bitSize, max = size - len + 1; i < max; ++i) {
-			for (int off = i, count = 0; i < size && !bitmap.get(i); ++i) {
-				if (++count == len) {
-					int subCapacity = len << CELL_LEN_SHIFT;
-					bitmap.set(off, off + len);
-					remaining += subCapacity;
-					remainCell -= len;
-					lastUsingTime = System.currentTimeMillis();
-					return new DefBlock(resourceOffset + (off << CELL_LEN_SHIFT), subCapacity, arena, this);
-				}
+		for (int i = 0, max = bitSize - len + 1; i < max; ++i) {
+			if (isFree(bitmap, i, len)) {
+				int subCapacity = len << CELL_LEN_SHIFT;
+				bitmap.set(i, i + len, true);
+				remaining += subCapacity;
+				remainCell -= len;
+				lastUsingTime = System.currentTimeMillis();
+				return new DefBlock(resourceOffset + (i << CELL_LEN_SHIFT), subCapacity, arena, this);
 			}
 		}
 		return null;
 	}
+
+	protected static boolean isFree(BitSet bitmap, int off, int len) {
+		for (len += off; off < len; ++off)
+			if (bitmap.get(off))
+				return false;
+		return true;
+	}
+
 
 	@Override
 	public void recycle(SNetBlock block) {
@@ -67,14 +74,6 @@ public class CenterBlock extends DefBlock implements SNetAllocatableBlock, Relea
 			remaining += block.getCapacity();
 			lastUsingTime = System.currentTimeMillis();
 		}
-	}
-
-	@Override
-	public void reset() {
-		bitmap.clear();
-		this.remaining = capacity;
-		this.remainCell = bitSize;
-		this.lastUsingTime = System.currentTimeMillis();
 	}
 
 	@Override
