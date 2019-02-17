@@ -7,6 +7,8 @@ import com.snet.buffer.block.SNetBlockArena;
 import com.snet.util.BPTreeMap;
 import com.snet.util.MathUtil;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 class AreaBlockArena extends SNetAbsBlockArena {
@@ -91,9 +93,17 @@ class AreaBlockArena extends SNetAbsBlockArena {
 		areaBlock.recycle(block);
 	}
 
+
 	@Override
 	public void releaseBlock() {
-
+		List<SNetBlock> list = new LinkedList<>();
+		for (BlockCache cache : caches)
+			cache.recycleCache(list);
+		for (SNetBlock block : list)
+			recycle0(block);
+		List<AreaBlock> releaseBlocks = new LinkedList<>();
+		for (AreaBlock block : blocks) {
+		}
 	}
 
 }

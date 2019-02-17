@@ -10,12 +10,14 @@ public class AreaBlock implements SNetBlock {
 	protected final AreaBlockArena arena;
 	protected final SNetBlock block;
 	protected final BPTreeMap<Integer, Cell> cells;
+	protected long lastUsing;
 	protected int remaining;
 
 	public AreaBlock(AreaBlockArena arena, SNetBlock block) {
 		this.arena = arena;
 		this.block = block;
 		this.cells = new BPTreeMap<>(2);
+		this.lastUsing = System.currentTimeMillis();
 		this.remaining = block.getCapacity();
 
 		Cell cell = new Cell(this, block.getResourceOffset(), block.getCapacity());
@@ -32,9 +34,9 @@ public class AreaBlock implements SNetBlock {
 	}
 
 	public SNetBlock allocate(Cell cell, int capacity) {
-		remaining -= capacity;
+		this.remaining -= capacity;
+		this.lastUsing = System.currentTimeMillis();
 		cell.remaining -= capacity;
-
 		int blockOffset = cell.offset + remaining;
 		cell.removeSort();
 		if (cell.hasRemaining()) {
