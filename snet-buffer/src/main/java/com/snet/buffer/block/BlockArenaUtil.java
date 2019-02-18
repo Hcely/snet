@@ -1,7 +1,7 @@
 package com.snet.buffer.block;
 
 public class BlockArenaUtil {
-	public static final int MIN_SHIFT = 8;
+	public static final int MIN_SHIFT = 7;
 	public static final int MIN_CAPACITY = 1 << MIN_SHIFT;
 
 	public static final int getIdx(int capacity) {

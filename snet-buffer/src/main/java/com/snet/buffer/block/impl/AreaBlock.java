@@ -2,22 +2,19 @@ package com.snet.buffer.block.impl;
 
 import com.snet.buffer.block.DefBlock;
 import com.snet.buffer.block.SNetBlock;
-import com.snet.buffer.block.SNetBlockArena;
-import com.snet.buffer.resource.SNetResource;
 import com.snet.util.BPTreeMap;
 
-public class AreaBlock implements SNetBlock {
-	protected final AreaBlockArena arena;
-	protected final SNetBlock block;
+public class AreaBlock extends ProxyBlock {
 	protected final BPTreeMap<Integer, Cell> cells;
-	protected long lastUsing;
+	protected final AreaBlockArena arena;
+	protected long lastUsingTime;
 	protected int remaining;
 
 	public AreaBlock(AreaBlockArena arena, SNetBlock block) {
+		super(arena, block);
 		this.arena = arena;
-		this.block = block;
 		this.cells = new BPTreeMap<>(2);
-		this.lastUsing = System.currentTimeMillis();
+		this.lastUsingTime = System.currentTimeMillis();
 		this.remaining = block.getCapacity();
 
 		Cell cell = new Cell(this, block.getResourceOffset(), block.getCapacity());
@@ -29,23 +26,26 @@ public class AreaBlock implements SNetBlock {
 		return cells.firstEntity().getValue();
 	}
 
+	@Override
+	public void release() {
+		if (!enableReleased())
+			throw new RuntimeException("");
+		super.release();
+		for (Cell cell : cells.values())
+			cell.removeSort();
+	}
+
 	public boolean enableReleased() {
 		return remaining == block.getCapacity();
 	}
 
-	public SNetBlock allocate(Cell cell, int capacity) {
+	public long getLastUsingTime() {
+		return lastUsingTime;
+	}
+
+	private void allocate(int capacity) {
 		this.remaining -= capacity;
-		this.lastUsing = System.currentTimeMillis();
-		cell.remaining -= capacity;
-		int blockOffset = cell.offset + remaining;
-		cell.removeSort();
-		if (cell.hasRemaining()) {
-			cell.sortNode = arena.addSort(cell);
-		} else {
-			cells.remove(cell.offset);
-			cell.sortNode = null;
-		}
-		return new DefBlock(blockOffset, capacity, getResource().duplicate(), arena, this);
+		this.lastUsingTime = System.currentTimeMillis();
 	}
 
 	public void recycle(SNetBlock block) {
@@ -64,47 +64,17 @@ public class AreaBlock implements SNetBlock {
 			cells.put(offset, newCell);
 			newCell.sortNode = arena.addSort(newCell);
 		}
-		remaining += capacity;
-	}
-
-	@Override
-	public int getCapacity() {
-		return block.getCapacity();
-	}
-
-	@Override
-	public int getResourceOffset() {
-		return block.getResourceOffset();
-	}
-
-	@Override
-	public boolean isReleased() {
-		return block.isReleased();
-	}
-
-	@Override
-	public SNetResource getResource() {
-		return block.getResource();
-	}
-
-	@Override
-	public SNetBlockArena getArena() {
-		return arena;
-	}
-
-	@Override
-	public SNetBlock getParent() {
-		return block.getParent();
+		this.remaining += capacity;
 	}
 
 	public static final class Cell {
-		protected final AreaBlock combineBlock;
+		protected final AreaBlock areaBlock;
 		protected final int offset;
 		protected int remaining;
 		protected BPTreeMap.LeafNode<Cell, Void> sortNode;
 
-		public Cell(AreaBlock combineBlock, int offset, int remaining) {
-			this.combineBlock = combineBlock;
+		public Cell(AreaBlock areaBlock, int offset, int remaining) {
+			this.areaBlock = areaBlock;
 			this.offset = offset;
 			this.remaining = remaining;
 		}
@@ -120,19 +90,29 @@ public class AreaBlock implements SNetBlock {
 			}
 		}
 
-		public void combine(Cell block) {
-			remaining += block.remaining;
+		public SNetBlock allocate(int capacity) {
+			this.remaining -= capacity;
+			areaBlock.allocate(capacity);
+			removeSort();
+			int blockOffset = offset + remaining;
+			if (remaining > 0)
+				this.sortNode = areaBlock.arena.addSort(this);
+			else {
+				areaBlock.cells.remove(offset);
+				this.sortNode = null;
+			}
+			return new DefBlock(blockOffset, capacity, areaBlock.arena, areaBlock);
 		}
 
-		public boolean hasRemaining() {
-			return remaining > 0;
+		public void combine(Cell block) {
+			remaining += block.remaining;
 		}
 
 		public boolean isNeighbor(Cell block) {
 			return this.offset + remaining == block.offset;
 		}
 
-		public void removeSort() {
+		private void removeSort() {
 			if (sortNode != null)
 				sortNode.remove();
 		}

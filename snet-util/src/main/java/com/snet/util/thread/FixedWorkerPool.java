@@ -54,7 +54,17 @@ public class FixedWorkerPool<T> implements WorkService<T> {
 	}
 
 	@Override
+	public <E> Future<E> submit(Runnable task, E result) {
+		return workers[task.hashCode() & mask].submit(task, result);
+	}
+
+	@Override
 	public void execute(T task) {
+		workers[task.hashCode() & mask].execute(task);
+	}
+
+	@Override
+	public void execute(Runnable task) {
 		workers[task.hashCode() & mask].execute(task);
 	}
 

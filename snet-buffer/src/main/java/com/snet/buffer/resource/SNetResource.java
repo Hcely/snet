@@ -1,6 +1,7 @@
 package com.snet.buffer.resource;
 
-import com.snet.buffer.SNetReference;
+
+import com.snet.SNetReference;
 
 import java.nio.ByteBuffer;
 

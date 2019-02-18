@@ -28,13 +28,13 @@ public class BlockCache {
 		return bufferBlock;
 	}
 
-	public void recycleCache(List<SNetBlock> list) {
+	public void recycleCache(List<SNetBlock> list, int factor) {
 		if (lastUsingTime + idleTime > System.currentTimeMillis())
 			return;
 		int size = cache.size();
 		if (size == 0)
 			return;
-		size = Math.min(size >>> 1, 4);
+		size = factor > 0 ? factor : (factor == 0 ? Integer.MAX_VALUE : Math.min(size / (-factor), 4));
 		for (int i = 0; i < size; ++i) {
 			SNetBlock block = cache.poll();
 			if (block == null)

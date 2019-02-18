@@ -29,6 +29,10 @@ public class Worker<T> implements Initializable, WorkService<T> {
 	protected final Consumer<T> consumer;
 	protected final Thread thread;
 
+	public Worker(Consumer<T> consumer) {
+		this(new DefTaskQueue(), consumer);
+	}
+
 	public Worker(TaskQueue queue, Consumer<T> consumer) {
 		this(nextName(), queue, consumer);
 	}
@@ -73,8 +77,21 @@ public class Worker<T> implements Initializable, WorkService<T> {
 	}
 
 	@Override
+	public void execute(Runnable task) {
+		if (destroy) return;
+		queue.add(task);
+	}
+
+	@Override
 	public <E> Future<E> submit(T task, E result) {
 		if (destroy) return null;
+		FuturePromise<E> promise = FuturePromise.create(new TaskRunner(consumer, task), result);
+		queue.add(promise);
+		return promise;
+	}
+
+	@Override
+	public <E> Future<E> submit(Runnable task, E result) {
 		FuturePromise<E> promise = FuturePromise.create(new TaskRunner(consumer, task), result);
 		queue.add(promise);
 		return promise;
@@ -120,7 +137,10 @@ public class Worker<T> implements Initializable, WorkService<T> {
 
 		@Override
 		public void run() {
-			consumer.accept(task);
+			if (task instanceof Runnable)
+				((Runnable) task).run();
+			else
+				consumer.accept(task);
 		}
 	}
 

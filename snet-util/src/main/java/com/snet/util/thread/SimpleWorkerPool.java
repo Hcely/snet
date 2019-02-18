@@ -59,7 +59,21 @@ public class SimpleWorkerPool<T> implements WorkService<T> {
 	}
 
 	@Override
+	public <E> Future<E> submit(Runnable task, E result) {
+		if (destroy) return null;
+		FuturePromise<E> promise = FuturePromise.create(new Worker.TaskRunner(consumer, task), result);
+		queue.add(promise);
+		return promise;
+	}
+
+	@Override
 	public void execute(T task) {
+		if (destroy) return;
+		queue.add(task);
+	}
+
+	@Override
+	public void execute(Runnable task) {
 		if (destroy) return;
 		queue.add(task);
 	}

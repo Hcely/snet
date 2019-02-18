@@ -13,12 +13,12 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 	protected final Thread thread;
 	protected final BlockCache[] caches;
 
-	public LocalBlockArena(SNetBlockArena parent) {
-		super(parent);
+	public LocalBlockArena(ArenaManager manager, SNetBlockArena parent) {
+		super(manager, parent);
 		this.thread = Thread.currentThread();
 		this.caches = new BlockCache[MAX_SHIFT - BlockArenaUtil.MIN_SHIFT];
 		for (int i = 0, len = MAX_SHIFT - BlockArenaUtil.MIN_SHIFT; i < len; ++i)
-			this.caches[i] = new BlockCache(64 >>> i, 5000);
+			this.caches[i] = new BlockCache(64 >>> i, manager.getLocalIdleTime());
 	}
 
 	public Thread getThread() {
@@ -35,22 +35,45 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 		final int idx = BlockArenaUtil.getIdx(capacity);
 		BlockCache cache = caches[idx];
 		SNetBlock block = cache.poll();
-		return block == null ? parent.allocate(capacity) : block;
+		if (block != null)
+			return block;
+		block = new ProxyBlock(this, parent.allocate(capacity));
+		return block;
 	}
 
 	@Override
 	public void recycle(SNetBlock block) {
-		final int idx = BlockArenaUtil.getIdx(block.getCapacity());
-		if (!caches[idx].add(block))
-			parent.recycle(block);
+		if (released || !caches[BlockArenaUtil.getIdx(block.getCapacity())].add(block)) {
+			block.release();
+			manager.recycleBlock(((ProxyBlock) block).getBlock());
+		}
 	}
 
 	@Override
 	public void releaseBlock() {
+		if (thread.isAlive())
+			releaseBlock0(-2);
+		else
+			release();
+	}
+
+	@Override
+	public void release() {
+		released = true;
+		releaseBlock0(0);
+	}
+
+	protected void releaseBlock0(int factor) {
 		List<SNetBlock> list = new LinkedList<>();
 		for (BlockCache cache : caches)
-			cache.recycleCache(list);
-		for (SNetBlock block : list)
-			parent.recycle(block);
+			cache.recycleCache(list, factor);
+		if (list.isEmpty())
+			return;
+		List<SNetBlock> releaseList = new LinkedList<>();
+		for (SNetBlock block : list) {
+			block.release();
+			releaseList.add(((ProxyBlock) block).getBlock());
+		}
+		manager.recycleBlocks(releaseList);
 	}
 }

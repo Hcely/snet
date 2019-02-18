@@ -13,4 +13,10 @@ public interface WorkService<T> extends WorkExecutor<T>, Shutdownable {
 	}
 
 	<E> Future<E> submit(T task, E result);
+
+	default Future<?> submit(Runnable task) {
+		return submit(task, null);
+	}
+
+	<E> Future<E> submit(Runnable task, E result);
 }

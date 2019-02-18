@@ -120,6 +120,7 @@ public class BufferResource implements SNetResource {
 
 	@Override
 	public SNetResource duplicate() {
+		remainCount.incrementAndGet();
 		return new BufferResource(remainCount, wBuffer.duplicate(), wBuffer.asReadOnlyBuffer());
 	}
 

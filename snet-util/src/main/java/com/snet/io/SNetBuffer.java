@@ -1,6 +1,8 @@
 package com.snet.io;
 
-public interface SNetBuffer extends BufferWriteView, BufferReadView {
+import com.snet.SNetReference;
+
+public interface SNetBuffer extends BufferWriteView, BufferReadView, SNetReference {
 	void ensureCapacity(int capacity);
 
 	int getWritePos();

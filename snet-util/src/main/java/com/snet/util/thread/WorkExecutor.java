@@ -6,4 +6,6 @@ public interface WorkExecutor<T> {
 	Consumer<T> getConsumer();
 
 	void execute(T task);
+
+	void execute(Runnable task);
 }

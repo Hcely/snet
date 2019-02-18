@@ -52,4 +52,12 @@ public class DefBlock implements SNetBlock {
 	public boolean isReleased() {
 		return released;
 	}
+
+	@Override
+	public void release() {
+		if (released)
+			return;
+		released = true;
+		resource.release();
+	}
 }
