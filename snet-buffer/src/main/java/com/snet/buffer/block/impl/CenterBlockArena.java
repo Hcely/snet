@@ -8,11 +8,12 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 class CenterBlockArena extends SNetAbsBlockArena {
-	protected volatile int blockSize;
+	protected final AtomicInteger blockSize;
 	protected final ConcurrentLinkedQueue<CenterBlock> blocks;
 	protected final int blockCapacity;
 	protected final int threshold;
@@ -20,7 +21,7 @@ class CenterBlockArena extends SNetAbsBlockArena {
 
 	public CenterBlockArena(ArenaManager manager, int blockCapacity) {
 		super(manager, null);
-		this.blockSize = 0;
+		this.blockSize = new AtomicInteger(0);
 		this.blocks = new ConcurrentLinkedQueue<>();
 		this.blockCapacity = MathUtil.ceil2(blockCapacity);
 		this.threshold = this.blockCapacity + 1;
@@ -45,7 +46,7 @@ class CenterBlockArena extends SNetAbsBlockArena {
 	}
 
 	private SNetBlock allocateImpl(int capacity) {
-		int size = 0, blockSize = this.blockSize;
+		int size = 0, blockSize = this.blockSize.get();
 		for (Iterator<CenterBlock> it = null; size < blockSize; ) {
 			if ((it == null || !it.hasNext()) && !(it = blocks.iterator()).hasNext())
 				break;
@@ -67,20 +68,20 @@ class CenterBlockArena extends SNetAbsBlockArena {
 	}
 
 	private SNetBlock allocateOrCreate(int capacity) {
-		if (lock.tryLock())
-			try {
-				SNetBlock result = allocateImpl(capacity);
-				if (result == null) {
-					SNetResource resource = manager.createResource(blockCapacity);
-					CenterBlock block = new CenterBlock(resource, this);
-					blocks.add(block);
-					++blockSize;
-				}
-				return result;
-			} finally {
-				lock.unlock();
+		if (!lock.tryLock())
+			return null;
+		try {
+			SNetBlock result = allocateImpl(capacity);
+			if (result == null) {
+				SNetResource resource = manager.createResource(blockCapacity);
+				CenterBlock block = new CenterBlock(resource, this);
+				blocks.add(block);
+				blockSize.incrementAndGet();
 			}
-		return null;
+			return result;
+		} finally {
+			lock.unlock();
+		}
 	}
 
 	@Override
@@ -113,17 +114,12 @@ class CenterBlockArena extends SNetAbsBlockArena {
 				}
 			}
 		}
-		try {
-			lock.lock();
-			for (Iterator<CenterBlock> it = blocks.iterator(); it.hasNext(); ) {
-				CenterBlock block = it.next();
-				if (block.isReleased()) {
-					--blockSize;
-					it.remove();
-				}
+		for (Iterator<CenterBlock> it = blocks.iterator(); it.hasNext(); ) {
+			CenterBlock block = it.next();
+			if (block.isReleased()) {
+				blockSize.decrementAndGet();
+				it.remove();
 			}
-		} finally {
-			lock.unlock();
 		}
 	}
 

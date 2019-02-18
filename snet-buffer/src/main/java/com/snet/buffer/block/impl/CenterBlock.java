@@ -1,6 +1,5 @@
 package com.snet.buffer.block.impl;
 
-import com.snet.Releasable;
 import com.snet.buffer.block.DefBlock;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;

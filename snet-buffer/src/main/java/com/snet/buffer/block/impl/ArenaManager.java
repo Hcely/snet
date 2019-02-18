@@ -1,5 +1,7 @@
 package com.snet.buffer.block.impl;
 
+import com.snet.Initializable;
+import com.snet.Releasable;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.resource.SNetBufferResourceFactory;
@@ -8,28 +10,50 @@ import com.snet.util.thread.Worker;
 
 import java.util.List;
 import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-public class ArenaManager {
+public class ArenaManager implements Initializable, Releasable {
+
 	protected Timer monitor;
 	protected Worker<SNetBlock> reclaimer;
-	protected ConcurrentLinkedQueue<SNetBlockArena> arenas;
-	protected SNetBufferResourceFactory resourceFactory;
-	protected final int centerIdleTime;
-	protected final int areaIdleTime;
-	protected final int localIdleTime;
+	protected final ConcurrentLinkedQueue<SNetBlockArena> arenas;
+	protected final SNetBufferResourceFactory resourceFactory;
+	protected int centerIdleTime;
+	protected int areaIdleTime;
+	protected int localIdleTime;
 
-	public ArenaManager(int centerIdleTime, int areaIdleTime, int localIdleTime) {
-		this.monitor = new Timer(true);
-		this.reclaimer = new Worker<SNetBlock>(e -> e.getArena().recycle(e)).setDaemon(true);
+	public ArenaManager(SNetBufferResourceFactory resourceFactory) {
 		this.arenas = new ConcurrentLinkedQueue<>();
+		this.resourceFactory = resourceFactory;
+		this.centerIdleTime = 15000;
+		this.areaIdleTime = 10000;
+		this.localIdleTime = 5000;
+	}
+
+	public void setCenterIdleTime(int centerIdleTime) {
 		this.centerIdleTime = centerIdleTime;
+	}
+
+	public void setAreaIdleTime(int areaIdleTime) {
 		this.areaIdleTime = areaIdleTime;
+	}
+
+	public void setLocalIdleTime(int localIdleTime) {
 		this.localIdleTime = localIdleTime;
 	}
 
-	public void addArena(SNetBlockArena arena) {
-		arenas.add(arena);
+	@Override
+	public void initialize() {
+		this.monitor = new Timer(true);
+		this.reclaimer = new Worker<SNetBlock>(e -> e.getArena().recycle(e)).setDaemon(true);
+		reclaimer.initialize();
+		monitor.schedule(new MonitorTask(arenas), 1000, 1000);
+	}
+
+	@Override
+	public void release() {
+
 	}
 
 	public SNetResource createResource(int capacity) {
@@ -67,6 +91,27 @@ public class ArenaManager {
 		public void run() {
 			for (SNetBlock block : blocks)
 				block.getArena().recycle(block);
+		}
+	}
+
+	protected static class MonitorTask extends TimerTask {
+		protected final ConcurrentLinkedQueue<SNetBlockArena> arenas;
+
+		public MonitorTask(ConcurrentLinkedQueue<SNetBlockArena> arenas) {
+			this.arenas = arenas;
+		}
+
+		@Override
+		public void run() {
+			try {
+				run0();
+			} catch (Throwable e) {
+				e.printStackTrace();
+			}
+		}
+
+		protected void run0() {
+
 		}
 	}
 
