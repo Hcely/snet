@@ -53,11 +53,9 @@ class CenterBlockArena extends SNetAbsBlockArena {
 			CenterBlock block = it.next();
 			if (block.tryLock()) {
 				try {
-					if (!block.isReleased()) {
-						SNetBlock result = block.allocate(capacity);
-						if (result != null)
-							return result;
-					}
+					SNetBlock result = block.allocate(capacity);
+					if (result != null)
+						return result;
 				} finally {
 					++size;
 					block.unlock();
@@ -86,13 +84,13 @@ class CenterBlockArena extends SNetAbsBlockArena {
 
 	@Override
 	public void recycle(SNetBlock block) {
-		CenterBlock cBlock = (CenterBlock) block.getParent();
+		CenterBlock centerBlock = (CenterBlock) block.getParent();
 		try {
-			cBlock.lock();
 			block.release();
-			cBlock.recycle(block);
+			centerBlock.lock();
+			centerBlock.recycle(block);
 		} finally {
-			cBlock.unlock();
+			centerBlock.unlock();
 		}
 	}
 
@@ -103,7 +101,8 @@ class CenterBlockArena extends SNetAbsBlockArena {
 			if (block.enableReleased() && block.getLastUsingTime() < idleDeadline)
 				idleBlocks.add(block);
 		}
-		if (idleBlocks.isEmpty()) return;
+		if (idleBlocks.isEmpty())
+			return;
 		for (CenterBlock block : idleBlocks) {
 			if (block.tryLock()) {
 				try {
@@ -128,6 +127,7 @@ class CenterBlockArena extends SNetAbsBlockArena {
 		if (released)
 			return;
 		released = true;
-		releaseBlock();
+		for (CenterBlock block : blocks)
+			block.release();
 	}
 }

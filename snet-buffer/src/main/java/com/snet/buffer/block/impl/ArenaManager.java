@@ -6,29 +6,37 @@ import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.resource.SNetBufferResourceFactory;
 import com.snet.buffer.resource.SNetResource;
+import com.snet.util.MathUtil;
+import com.snet.util.RuntimeUtil;
 import com.snet.util.thread.Worker;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
 
 public class ArenaManager implements Initializable, Releasable {
-
+	protected final ConcurrentLinkedDeque<SNetBlockArena> arenas;
+	protected final SNetBufferResourceFactory resourceFactory;
+	protected final int blockCapacity;
 	protected Timer monitor;
 	protected Worker<SNetBlock> reclaimer;
-	protected final ConcurrentLinkedQueue<SNetBlockArena> arenas;
-	protected final SNetBufferResourceFactory resourceFactory;
+	protected CenterBlockArena centerArena;
+	protected AreaBlockArena[] areaArenas;
 	protected int centerIdleTime;
 	protected int areaIdleTime;
 	protected int localIdleTime;
+	protected boolean released;
 
-	public ArenaManager(SNetBufferResourceFactory resourceFactory) {
-		this.arenas = new ConcurrentLinkedQueue<>();
+	public ArenaManager(int blockCapacity, SNetBufferResourceFactory resourceFactory) {
+		this.arenas = new ConcurrentLinkedDeque<>();
 		this.resourceFactory = resourceFactory;
 		this.centerIdleTime = 15000;
 		this.areaIdleTime = 10000;
 		this.localIdleTime = 5000;
+		this.blockCapacity = blockCapacity;
+		this.released = false;
 	}
 
 	public void setCenterIdleTime(int centerIdleTime) {
@@ -46,14 +54,24 @@ public class ArenaManager implements Initializable, Releasable {
 	@Override
 	public void initialize() {
 		this.monitor = new Timer(true);
-		this.reclaimer = new Worker<SNetBlock>(e -> e.getArena().recycle(e)).setDaemon(true);
+		this.reclaimer = new Worker<>(SNetBlock::recycle).setDaemon(true);
+		this.centerArena = new CenterBlockArena(this, blockCapacity);
+		this.areaArenas = new AreaBlockArena[MathUtil.ceil2(RuntimeUtil.DOUBLE_CORE_PROCESSOR)];
+		for (int i = 0, len = areaArenas.length; i < len; ++i)
+			areaArenas[i] = new AreaBlockArena(this, centerArena);
 		reclaimer.initialize();
 		monitor.schedule(new MonitorTask(arenas), 1000, 1000);
+		arenas.addFirst(centerArena);
+		for (AreaBlockArena e : areaArenas)
+			arenas.addFirst(e);
 	}
 
 	@Override
 	public void release() {
-
+		if (released)
+			return;
+		released = true;
+		centerArena.release();
 	}
 
 	public SNetResource createResource(int capacity) {
@@ -90,14 +108,14 @@ public class ArenaManager implements Initializable, Releasable {
 		@Override
 		public void run() {
 			for (SNetBlock block : blocks)
-				block.getArena().recycle(block);
+				block.recycle();
 		}
 	}
 
 	protected static class MonitorTask extends TimerTask {
-		protected final ConcurrentLinkedQueue<SNetBlockArena> arenas;
+		protected final ConcurrentLinkedDeque<SNetBlockArena> arenas;
 
-		public MonitorTask(ConcurrentLinkedQueue<SNetBlockArena> arenas) {
+		public MonitorTask(ConcurrentLinkedDeque<SNetBlockArena> arenas) {
 			this.arenas = arenas;
 		}
 
@@ -111,7 +129,12 @@ public class ArenaManager implements Initializable, Releasable {
 		}
 
 		protected void run0() {
-
+			for (Iterator<SNetBlockArena> it = arenas.iterator(); it.hasNext(); ) {
+				SNetBlockArena arena = it.next();
+				arena.releaseBlock();
+				if (arena.isReleased())
+					it.remove();
+			}
 		}
 	}
 

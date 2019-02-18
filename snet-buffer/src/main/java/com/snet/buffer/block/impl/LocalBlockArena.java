@@ -18,7 +18,7 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 		this.thread = Thread.currentThread();
 		this.caches = new BlockCache[MAX_SHIFT - BlockArenaUtil.MIN_SHIFT];
 		for (int i = 0, len = MAX_SHIFT - BlockArenaUtil.MIN_SHIFT; i < len; ++i)
-			this.caches[i] = new BlockCache(64 >>> i, manager.getLocalIdleTime());
+			this.caches[i] = new BlockCache(64 >>> i);
 	}
 
 	public Thread getThread() {
@@ -52,21 +52,23 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 	@Override
 	public void releaseBlock() {
 		if (thread.isAlive())
-			releaseBlock0(-2);
+			releaseBlock0(System.currentTimeMillis() - manager.getLocalIdleTime(), -2, true);
 		else
 			release();
 	}
 
 	@Override
 	public void release() {
+		if (released)
+			return;
 		released = true;
-		releaseBlock0(0);
+		releaseBlock0(0, 0, false);
 	}
 
-	protected void releaseBlock0(int factor) {
+	protected void releaseBlock0(long deadline, int factor, boolean async) {
 		List<SNetBlock> list = new LinkedList<>();
 		for (BlockCache cache : caches)
-			cache.recycleCache(list, factor);
+			cache.recycleCache(list, deadline, factor);
 		if (list.isEmpty())
 			return;
 		List<SNetBlock> releaseList = new LinkedList<>();
@@ -74,6 +76,15 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 			block.release();
 			releaseList.add(((ProxyBlock) block).getBlock());
 		}
-		manager.recycleBlocks(releaseList);
+		if (releaseList.isEmpty())
+			return;
+		if (async)
+			manager.recycleBlocks(releaseList);
+		else {
+			for (SNetBlock block : releaseList)
+				block.recycle();
+		}
 	}
+
+
 }

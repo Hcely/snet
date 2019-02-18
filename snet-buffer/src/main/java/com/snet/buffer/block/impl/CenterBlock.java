@@ -76,13 +76,6 @@ public class CenterBlock extends DefBlock {
 		return remaining == capacity && !released;
 	}
 
-	@Override
-	public void release() {
-		if (!enableReleased())
-			throw new RuntimeException("");
-		super.release();
-	}
-
 	public long getLastUsingTime() {
 		return lastUsingTime;
 	}

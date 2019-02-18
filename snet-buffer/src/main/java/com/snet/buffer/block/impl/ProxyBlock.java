@@ -45,6 +45,11 @@ public class ProxyBlock implements SNetBlock {
 	}
 
 	@Override
+	public void recycle() {
+		arena.recycle(this);
+	}
+
+	@Override
 	public void release() {
 		released = true;
 	}
