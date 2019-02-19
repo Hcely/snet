@@ -342,6 +342,9 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		return absentCreate ? addNode(prev, (K) key, null) : null;
 	}
 
+	public LeafNode<K,V> putEntity()
+	{}
+
 	@Override
 	public LeafNode<K, V> removeEntity(Object key) {
 		LeafNode<K, V> node = getEntity(key);
