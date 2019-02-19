@@ -3,15 +3,13 @@ package com.snet.buffer.block.impl;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
 
-public abstract class SNetAbsBlockArena implements SNetBlockArena {
-	protected final ArenaManager manager;
+public abstract class AbstractBlockArena implements SNetBlockArena {
+	protected final BlockArenaManager manager;
 	protected final SNetBlockArena parent;
-	protected boolean released;
 
-	public SNetAbsBlockArena(ArenaManager manager, SNetBlockArena parent) {
+	public AbstractBlockArena(BlockArenaManager manager, SNetBlockArena parent) {
 		this.manager = manager;
 		this.parent = parent;
-		this.released = false;
 	}
 
 	@Override
@@ -24,11 +22,6 @@ public abstract class SNetAbsBlockArena implements SNetBlockArena {
 		if (supports(capacity))
 			return allocate0(capacity);
 		return parent.allocate(capacity);
-	}
-
-	@Override
-	public boolean isReleased() {
-		return released;
 	}
 
 	protected abstract boolean supports(int capacity);

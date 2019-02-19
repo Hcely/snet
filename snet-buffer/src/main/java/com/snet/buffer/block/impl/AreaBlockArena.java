@@ -1,18 +1,16 @@
 package com.snet.buffer.block.impl;
 
 import com.snet.buffer.block.BlockArenaUtil;
-import com.snet.buffer.block.DefBlock;
+import com.snet.buffer.block.BlockCache;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
 import com.snet.util.BPTreeMap;
-import com.snet.util.MathUtil;
 
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class AreaBlockArena extends SNetAbsBlockArena {
+class AreaBlockArena extends AbstractCacheBlockArena {
 	protected static final BPTreeMap.KeyComparator<AreaBlock.Cell, Object> REMAIN_COMPARATOR = (o1, o2) -> {
 		final int remain1 = o1.remaining;
 		if (o2 instanceof Integer)
@@ -24,18 +22,14 @@ class AreaBlockArena extends SNetAbsBlockArena {
 	public static final int MAX_SHIFT = 20;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
 	public static final int BLOCK_LEN = 1 << 21;
-	protected final BlockCache[] caches;
+
 	protected final ConcurrentLinkedQueue<AreaBlock> blocks;
 	protected final BPTreeMap<AreaBlock.Cell, Void> sortBlocks;
 
-	public AreaBlockArena(ArenaManager manager, SNetBlockArena parent) {
-		super(manager, parent);
-		final int len = MAX_SHIFT - BlockArenaUtil.MIN_SHIFT;
-		this.caches = new BlockCache[len];
+	public AreaBlockArena(BlockArenaManager manager, SNetBlockArena parent) {
+		super(manager, parent, BlockArenaUtil.getCaches(MAX_SHIFT - BlockArenaUtil.MIN_SHIFT, 16, 8192));
 		this.blocks = new ConcurrentLinkedQueue<>();
 		this.sortBlocks = new BPTreeMap<>(2, REMAIN_COMPARATOR, BPTreeMap.IDENTITY_EQUALS);
-		for (int i = 0; i < len; ++i)
-			caches[i] = new BlockCache(Math.min(16, 8192 >>> i));
 	}
 
 	@Override
@@ -44,40 +38,24 @@ class AreaBlockArena extends SNetAbsBlockArena {
 	}
 
 	@Override
-	public SNetBlock allocate(int capacity) {
-		if (supports(capacity))
-			return allocate0(MathUtil.ceil2(capacity));
-		return parent.allocate(capacity);
-	}
-
-	@Override
-	protected SNetBlock allocate0(int capacity) {
-		if (released)
-			return null;
-		int idx = BlockArenaUtil.getIdx(capacity);
-		SNetBlock block = caches[idx].poll();
-		if (block != null)
-			return block;
-		if (++idx < MAX_SHIFT - BlockArenaUtil.MIN_SHIFT && (block = caches[idx].poll()) != null) {
-			SNetBlock newBlock = new DefBlock(block.getResourceOffset(), capacity, block.getResource(), block.getArena(), block.getParent());
-			recycle(newBlock);
-			block = new DefBlock(block.getResourceOffset() + capacity, capacity, block.getResource().duplicate(), block.getArena(), block.getParent());
-			return block;
+	protected SNetBlock allocate1(int capacity) {
+		try {
+			synchronized (this) {
+				final BPTreeMap.LeafNode<AreaBlock.Cell, Void> node = sortBlocks.ceilEntity(capacity);
+				AreaBlock.Cell cell;
+				if (node != null)
+					cell = node.getKey();
+				else {
+					SNetBlock block = parent.allocate(BLOCK_LEN);
+					AreaBlock areaBlock = new AreaBlock(this, block);
+					blocks.add(areaBlock);
+					cell = areaBlock.firstCell();
+				}
+				return cell.allocate(capacity);
+			}
+		} finally {
+			manager.incBlockCount();
 		}
-		return allocate1(capacity);
-	}
-
-	protected synchronized SNetBlock allocate1(int capacity) {
-		final BPTreeMap.LeafNode<AreaBlock.Cell, Void> node = sortBlocks.ceilEntity(capacity);
-		AreaBlock.Cell cell = node == null ? create() : node.getKey();
-		return cell.allocate(capacity);
-	}
-
-	protected AreaBlock.Cell create() {
-		SNetBlock block = parent.allocate(BLOCK_LEN);
-		AreaBlock areaBlock = new AreaBlock(this, block);
-		blocks.add(areaBlock);
-		return areaBlock.firstCell();
 	}
 
 	protected BPTreeMap.LeafNode<AreaBlock.Cell, Void> addSort(AreaBlock.Cell block) {
@@ -85,25 +63,26 @@ class AreaBlockArena extends SNetAbsBlockArena {
 	}
 
 	@Override
-	public void recycle(SNetBlock block) {
-		int idx = BlockArenaUtil.getIdx(block.getCapacity());
-		if (!caches[idx].add(block))
-			recycle0(block);
-	}
-
-	protected synchronized void recycle0(SNetBlock block) {
-		AreaBlock areaBlock = (AreaBlock) block.getParent();
-		areaBlock.recycle(block);
+	protected void recycle0(SNetBlock block) {
+		try {
+			synchronized (this) {
+				AreaBlock areaBlock = (AreaBlock) block.getParent();
+				areaBlock.recycle(block);
+			}
+		} finally {
+			manager.decBlockCount();
+		}
 	}
 
 	@Override
-	public void releaseBlock() {
-		long deadline = System.currentTimeMillis() - manager.getAreaIdleTime();
-		releaseCache(deadline, -2);
-		releaseAreaBlock(deadline, true);
+	public void trimArena() {
+		final long deadline = manager.released ? 0 : System.currentTimeMillis() - manager.getAreaIdleTime();
+		final int factor = manager.released ? 0 : -2;
+		trimCache(deadline, factor);
+		trimBlock(deadline);
 	}
 
-	protected void releaseCache(long deadline, int factor) {
+	protected void trimCache(long deadline, int factor) {
 		List<SNetBlock> list = new LinkedList<>();
 		for (BlockCache cache : caches)
 			cache.recycleCache(list, deadline, factor);
@@ -111,7 +90,7 @@ class AreaBlockArena extends SNetAbsBlockArena {
 			recycle0(block);
 	}
 
-	protected void releaseAreaBlock(long deadline, boolean async) {
+	protected void trimBlock(long deadline) {
 		List<AreaBlock> list = new LinkedList<>();
 		for (AreaBlock block : blocks) {
 			if (block.enableReleased() && block.getLastUsingTime() < deadline)
@@ -125,14 +104,7 @@ class AreaBlockArena extends SNetAbsBlockArena {
 			if (block.isReleased())
 				blocks.add(block.getBlock());
 		}
-		if (blocks.isEmpty())
-			return;
-		if (async)
-			manager.recycleBlocks(blocks);
-		else {
-			for (SNetBlock e : blocks)
-				e.recycle();
-		}
+		manager.recycleBlocks(blocks);
 	}
 
 	protected synchronized void releaseAreaBlocks(List<AreaBlock> releaseBlocks) {
@@ -140,14 +112,5 @@ class AreaBlockArena extends SNetAbsBlockArena {
 			if (block.enableReleased())
 				block.release();
 		}
-	}
-
-	@Override
-	public void release() {
-		if (released)
-			return;
-		released = true;
-		releaseCache(0, 0);
-		releaseAreaBlock(0, false);
 	}
 }

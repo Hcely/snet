@@ -12,14 +12,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class CenterBlockArena extends SNetAbsBlockArena {
+class CenterBlockArena extends AbstractBlockArena {
 	protected final AtomicInteger blockSize;
 	protected final ConcurrentLinkedQueue<CenterBlock> blocks;
 	protected final int blockCapacity;
 	protected final int threshold;
 	protected final Lock lock;
 
-	public CenterBlockArena(ArenaManager manager, int blockCapacity) {
+	public CenterBlockArena(BlockArenaManager manager, int blockCapacity) {
 		super(manager, null);
 		this.blockSize = new AtomicInteger(0);
 		this.blocks = new ConcurrentLinkedQueue<>();
@@ -35,14 +35,17 @@ class CenterBlockArena extends SNetAbsBlockArena {
 
 	@Override
 	public SNetBlock allocate0(int capacity) {
-		for (SNetBlock result; !released; ) {
-			if ((result = allocateImpl(capacity)) != null)
-				return result;
-			if ((result = allocateOrCreate(capacity)) != null)
-				return result;
-			Thread.yield();
+		try {
+			for (SNetBlock result; ; ) {
+				if ((result = allocateImpl(capacity)) != null)
+					return result;
+				if ((result = allocateOrCreate(capacity)) != null)
+					return result;
+				Thread.yield();
+			}
+		} finally {
+			manager.incBlockCount();
 		}
-		return null;
 	}
 
 	private SNetBlock allocateImpl(int capacity) {
@@ -68,20 +71,22 @@ class CenterBlockArena extends SNetAbsBlockArena {
 	}
 
 	private SNetBlock allocateOrCreate(int capacity) {
-		if (!lock.tryLock())
-			return null;
-		try {
-			SNetBlock result = allocateImpl(capacity);
-			if (result == null) {
+		if (lock.tryLock()) {
+			try {
+				SNetBlock result = allocateImpl(capacity);
+				if (result != null)
+					return result;
 				SNetResource resource = manager.createResource(blockCapacity);
 				CenterBlock block = new CenterBlock(resource, this);
 				blocks.add(block);
 				blockSize.incrementAndGet();
+				result = block.allocate(capacity);
+				return result;
+			} finally {
+				lock.unlock();
 			}
-			return result;
-		} finally {
-			lock.unlock();
 		}
+		return null;
 	}
 
 	@Override
@@ -93,10 +98,12 @@ class CenterBlockArena extends SNetAbsBlockArena {
 			cBlock.recycle(block);
 		} finally {
 			cBlock.unlock();
+			manager.decBlockCount();
 		}
 	}
 
-	public void releaseBlock() {
+	@Override
+	public void trimArena() {
 		final List<CenterBlock> idleBlocks = new LinkedList<>();
 		final long idleDeadline = System.currentTimeMillis() - manager.getCenterIdleTime();
 		for (CenterBlock block : blocks) {
@@ -121,13 +128,5 @@ class CenterBlockArena extends SNetAbsBlockArena {
 				it.remove();
 			}
 		}
-	}
-
-	@Override
-	public void release() {
-		if (released)
-			return;
-		released = true;
-		releaseBlock();
 	}
 }

@@ -13,21 +13,25 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.LongAdder;
 
-public class ArenaManager implements SNetBlockAllocator, Initializable, Releasable {
-
+public class BlockArenaManager implements SNetBlockAllocator, Initializable, Releasable {
 	protected Timer monitor;
 	protected Worker<SNetBlock> reclaimer;
 	protected final ConcurrentLinkedQueue<SNetBlockArena> arenas;
 	protected final SNetBufferResourceFactory resourceFactory;
+	protected final LongAdder blockCounter;
+	protected CenterBlockArena centerArena;
+	protected AreaBlockArena[] areaArenas;
 	protected int centerIdleTime;
 	protected int areaIdleTime;
 	protected int localIdleTime;
 	protected boolean released;
 
-	public ArenaManager(SNetBufferResourceFactory resourceFactory) {
+	public BlockArenaManager(SNetBufferResourceFactory resourceFactory) {
 		this.arenas = new ConcurrentLinkedQueue<>();
 		this.resourceFactory = resourceFactory;
+		this.blockCounter = new LongAdder();
 		this.centerIdleTime = 10000;
 		this.areaIdleTime = 5000;
 		this.localIdleTime = 2500;
@@ -55,7 +59,9 @@ public class ArenaManager implements SNetBlockAllocator, Initializable, Releasab
 
 	@Override
 	public void release() {
-
+		if (released)
+			return;
+		released = true;
 	}
 
 	@Override
@@ -67,29 +73,27 @@ public class ArenaManager implements SNetBlockAllocator, Initializable, Releasab
 		return resourceFactory.create(capacity);
 	}
 
+	protected void incBlockCount() {
+		blockCounter.add(1L);
+	}
+
+	protected void decBlockCount() {
+		blockCounter.add(-1L);
+		if (released && blockCounter.sum() == 0L) {
+			centerArena.trimArena();
+			monitor.cancel();
+				reclaimer.destroy();
+		}
+	}
+
 	protected void recycleBlock(SNetBlock block) {
-		recycleBlock(block, true);
+		reclaimer.execute(block);
 	}
 
 	protected void recycleBlocks(List<SNetBlock> blocks) {
-		recycleBlocks(blocks, true);
-	}
-
-	protected void recycleBlock(SNetBlock block, boolean async) {
-		if (async)
-			reclaimer.execute(block);
-		else
-			block.recycle();
-	}
-
-	protected void recycleBlocks(List<SNetBlock> blocks, boolean async) {
 		if (blocks == null || blocks.isEmpty())
 			return;
-		if (async)
-			reclaimer.execute(new RecycleRunner(blocks));
-		else {
-			for (SNetBlock e : blocks) e.recycle();
-		}
+		reclaimer.execute(new RecycleRunner(blocks));
 	}
 
 	public int getCenterIdleTime() {
@@ -136,7 +140,7 @@ public class ArenaManager implements SNetBlockAllocator, Initializable, Releasab
 
 		protected void run0() {
 			for (SNetBlockArena arena : arenas)
-				arena.releaseBlock();
+				arena.trimArena();
 		}
 	}
 

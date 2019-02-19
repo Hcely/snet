@@ -1,4 +1,4 @@
-package com.snet.buffer.block.impl;
+package com.snet.buffer.block;
 
 import com.snet.buffer.block.SNetBlock;
 import com.snet.util.FixedQueue;

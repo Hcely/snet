@@ -10,4 +10,11 @@ public class BlockArenaUtil {
 		int i = 32 - Integer.numberOfLeadingZeros(capacity - 1);
 		return i - MIN_SHIFT;
 	}
+
+	public static final BlockCache[] getCaches(int len, int minCapacity, int maxCapacity) {
+		BlockCache[] caches = new BlockCache[len];
+		for (int i = 0; i < len; ++i)
+			caches[i] = new BlockCache(Math.min(minCapacity, maxCapacity >>> i));
+		return caches;
+	}
 }
