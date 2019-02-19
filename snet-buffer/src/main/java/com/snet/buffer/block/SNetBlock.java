@@ -8,11 +8,11 @@ public interface SNetBlock extends Releasable {
 
 	int getResourceOffset();
 
-	boolean isReleased();
-
 	SNetResource getResource();
 
 	SNetBlockArena getArena();
 
 	SNetBlock getParent();
+
+	void recycle();
 }

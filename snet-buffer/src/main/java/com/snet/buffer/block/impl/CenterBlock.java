@@ -1,5 +1,6 @@
 package com.snet.buffer.block.impl;
 
+import com.snet.Releasable;
 import com.snet.buffer.block.DefBlock;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
@@ -9,16 +10,16 @@ import java.util.BitSet;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-public class CenterBlock extends DefBlock {
+public class CenterBlock extends DefBlock implements Releasable {
 	public static final int CELL_LEN_SHIFT = 10;
 	public static final int CELL_LEN = 1 << CELL_LEN_SHIFT;
 
 	protected final BitSet bitmap;
 	protected final int bitSize;
+	protected final Lock lock;
 	protected long lastUsingTime;
 	protected int remaining;
 	protected int remainCell;
-	protected final Lock lock;
 
 	public CenterBlock(SNetResource resource, SNetBlockArena arena) {
 		super(0, resource.getCapacity(), resource, arena, null);
@@ -73,7 +74,7 @@ public class CenterBlock extends DefBlock {
 	}
 
 	public boolean enableReleased() {
-		return remaining == capacity && !released;
+		return remaining == capacity;
 	}
 
 	@Override

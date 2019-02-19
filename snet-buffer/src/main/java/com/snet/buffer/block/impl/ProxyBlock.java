@@ -7,7 +7,6 @@ import com.snet.buffer.resource.SNetResource;
 public class ProxyBlock implements SNetBlock {
 	protected final SNetBlockArena arena;
 	protected final SNetBlock block;
-	protected boolean released;
 
 	public ProxyBlock(SNetBlockArena arena, SNetBlock block) {
 		this.arena = arena;
@@ -22,11 +21,6 @@ public class ProxyBlock implements SNetBlock {
 	@Override
 	public int getResourceOffset() {
 		return block.getResourceOffset();
-	}
-
-	@Override
-	public boolean isReleased() {
-		return released;
 	}
 
 	@Override
@@ -45,11 +39,15 @@ public class ProxyBlock implements SNetBlock {
 	}
 
 	@Override
-	public void release() {
-		released = true;
+	public void recycle() {
+		arena.recycle(this);
 	}
 
 	public SNetBlock getBlock() {
 		return block;
+	}
+
+	@Override
+	public void release() {
 	}
 }

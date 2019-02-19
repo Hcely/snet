@@ -35,7 +35,7 @@ class AreaBlockArena extends SNetAbsBlockArena {
 		this.blocks = new ConcurrentLinkedQueue<>();
 		this.sortBlocks = new BPTreeMap<>(2, REMAIN_COMPARATOR, BPTreeMap.IDENTITY_EQUALS);
 		for (int i = 0; i < len; ++i)
-			caches[i] = new BlockCache(Math.max(8 << (len - i), 1024), manager.getAreaIdleTime());
+			caches[i] = new BlockCache(Math.min(16, 8192 >>> i));
 	}
 
 	@Override
@@ -93,41 +93,46 @@ class AreaBlockArena extends SNetAbsBlockArena {
 
 	protected synchronized void recycle0(SNetBlock block) {
 		AreaBlock areaBlock = (AreaBlock) block.getParent();
-		block.release();
 		areaBlock.recycle(block);
 	}
 
 	@Override
 	public void releaseBlock() {
-		releaseCache(-2);
-		releaseAreaBlock();
+		long deadline = System.currentTimeMillis() - manager.getAreaIdleTime();
+		releaseCache(deadline, -2);
+		releaseAreaBlock(deadline, true);
 	}
 
-	protected void releaseCache(int factor) {
+	protected void releaseCache(long deadline, int factor) {
 		List<SNetBlock> list = new LinkedList<>();
 		for (BlockCache cache : caches)
-			cache.recycleCache(list, factor);
+			cache.recycleCache(list, deadline, factor);
 		for (SNetBlock block : list)
 			recycle0(block);
 	}
 
-	protected void releaseAreaBlock() {
-		List<AreaBlock> releaseBlocks = new LinkedList<>();
-		final long deadline = System.currentTimeMillis() - manager.getAreaIdleTime();
+	protected void releaseAreaBlock(long deadline, boolean async) {
+		List<AreaBlock> list = new LinkedList<>();
 		for (AreaBlock block : blocks) {
 			if (block.enableReleased() && block.getLastUsingTime() < deadline)
-				releaseBlocks.add(block);
+				list.add(block);
 		}
-		if (releaseBlocks.isEmpty())
+		if (list.isEmpty())
 			return;
+		releaseAreaBlocks(list);
 		List<SNetBlock> blocks = new LinkedList<>();
-		releaseAreaBlocks(releaseBlocks);
-		for (AreaBlock block : releaseBlocks) {
+		for (AreaBlock block : list) {
 			if (block.isReleased())
 				blocks.add(block.getBlock());
 		}
-		if (blocks.size() > 0)
+		if (blocks.isEmpty())
+			return;
+		if (async)
 			manager.recycleBlocks(blocks);
+		else {
+			for (SNetBlock e : blocks)
+				e.recycle();
+		}
 	}
 
 	protected synchronized void releaseAreaBlocks(List<AreaBlock> releaseBlocks) {
@@ -142,7 +147,7 @@ class AreaBlockArena extends SNetAbsBlockArena {
 		if (released)
 			return;
 		released = true;
-		releaseCache(0);
-		releaseAreaBlock();
+		releaseCache(0, 0);
+		releaseAreaBlock(0, false);
 	}
 }

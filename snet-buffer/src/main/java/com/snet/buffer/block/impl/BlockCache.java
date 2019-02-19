@@ -9,12 +9,10 @@ import java.util.List;
 
 public class BlockCache {
 	protected final FixedQueue<SNetBlock> cache;
-	protected final long idleTime;
 	protected long lastUsingTime;
 
-	public BlockCache(int capacity, long idleTime) {
+	public BlockCache(int capacity) {
 		this.cache = new FixedQueue<>(capacity);
-		this.idleTime = idleTime;
 		this.lastUsingTime = System.currentTimeMillis();
 	}
 
@@ -28,8 +26,8 @@ public class BlockCache {
 		return bufferBlock;
 	}
 
-	public void recycleCache(List<SNetBlock> list, int factor) {
-		if (lastUsingTime + idleTime > System.currentTimeMillis())
+	public void recycleCache(List<SNetBlock> list, long deadline, int factor) {
+		if (lastUsingTime > deadline)
 			return;
 		int size = cache.size();
 		if (size == 0)

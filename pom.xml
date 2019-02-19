@@ -18,6 +18,7 @@
         <module>snet-core</module>
         <module>snet-buffer</module>
     </modules>
+
     <dependencyManagement>
         <dependencies>
             <dependency>

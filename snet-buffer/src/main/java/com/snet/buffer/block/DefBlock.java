@@ -49,6 +49,10 @@ public class DefBlock implements SNetBlock {
 	}
 
 	@Override
+	public void recycle() {
+		arena.recycle(this);
+	}
+
 	public boolean isReleased() {
 		return released;
 	}

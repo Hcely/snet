@@ -46,7 +46,7 @@ class CenterBlockArena extends SNetAbsBlockArena {
 	}
 
 	private SNetBlock allocateImpl(int capacity) {
-		int size = 0, blockSize = this.blockSize.get();
+		int size = 0, blockSize = this.blockSize.get() + 2;
 		for (Iterator<CenterBlock> it = null; size < blockSize; ) {
 			if ((it == null || !it.hasNext()) && !(it = blocks.iterator()).hasNext())
 				break;

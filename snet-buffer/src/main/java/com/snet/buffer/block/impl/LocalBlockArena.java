@@ -8,7 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 public class LocalBlockArena extends SNetAbsBlockArena {
-	public static final int MAX_SHIFT = 12;
+	public static final int MAX_SHIFT = 13;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
 	protected final Thread thread;
 	protected final BlockCache[] caches;
@@ -18,7 +18,7 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 		this.thread = Thread.currentThread();
 		this.caches = new BlockCache[MAX_SHIFT - BlockArenaUtil.MIN_SHIFT];
 		for (int i = 0, len = MAX_SHIFT - BlockArenaUtil.MIN_SHIFT; i < len; ++i)
-			this.caches[i] = new BlockCache(64 >>> i, manager.getLocalIdleTime());
+			this.caches[i] = new BlockCache(Math.min(8, 64 >>> i));
 	}
 
 	public Thread getThread() {
@@ -52,21 +52,27 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 	@Override
 	public void releaseBlock() {
 		if (thread.isAlive())
-			releaseBlock0(-2);
+			releaseBlock0(System.currentTimeMillis() - manager.getLocalIdleTime(), -2, true);
 		else
-			release();
+			release0(true);
 	}
 
 	@Override
 	public void release() {
-		released = true;
-		releaseBlock0(0);
+		if (released)
+			return;
+		release0(false);
 	}
 
-	protected void releaseBlock0(int factor) {
+	protected void release0(boolean async) {
+		released = true;
+		releaseBlock0(0, 0, async);
+	}
+
+	protected void releaseBlock0(long deadline, int factor, boolean async) {
 		List<SNetBlock> list = new LinkedList<>();
 		for (BlockCache cache : caches)
-			cache.recycleCache(list, factor);
+			cache.recycleCache(list, deadline, factor);
 		if (list.isEmpty())
 			return;
 		List<SNetBlock> releaseList = new LinkedList<>();
@@ -74,6 +80,11 @@ public class LocalBlockArena extends SNetAbsBlockArena {
 			block.release();
 			releaseList.add(((ProxyBlock) block).getBlock());
 		}
-		manager.recycleBlocks(releaseList);
+		if (async)
+			manager.recycleBlocks(releaseList);
+		else {
+			for (SNetBlock e : releaseList)
+				e.recycle();
+		}
 	}
 }
