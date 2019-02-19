@@ -18,7 +18,6 @@ public class AreaBlock extends ProxyBlock implements Releasable {
 		this.lastUsingTime = System.currentTimeMillis();
 		this.remaining = block.getCapacity();
 		this.released = false;
-
 	}
 
 	public boolean isReleased() {
