@@ -12,10 +12,12 @@ public class LocalBlockArena extends AbstractCacheBlockArena {
 	public static final int MAX_SHIFT = 13;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
 	protected final Thread thread;
+	protected boolean alive;
 
 	public LocalBlockArena(BlockArenaManager manager, SNetBlockArena parent) {
 		super(manager, parent, BlockArenaUtil.getCaches(MAX_SHIFT - BlockArenaUtil.MIN_SHIFT, 8, 64));
 		this.thread = Thread.currentThread();
+		this.alive = true;
 	}
 
 	public Thread getThread() {
@@ -33,17 +35,29 @@ public class LocalBlockArena extends AbstractCacheBlockArena {
 	}
 
 	@Override
+	public void recycle(SNetBlock block) {
+		if (!alive || manager.released || !putCache(block))
+			recycle0(block);
+	}
+
+	@Override
 	protected void recycle0(SNetBlock block) {
 		block.release();
 		manager.recycleBlock(((ProxyBlock) block).getBlock());
+	}
+
+	public boolean isAlive() {
+		return alive;
 	}
 
 	@Override
 	public void trimArena() {
 		if (thread.isAlive() && !manager.released)
 			trimCache(System.currentTimeMillis() - manager.getLocalIdleTime(), -2);
-		else
+		else {
+			alive = false;
 			trimCache(0, 0);
+		}
 	}
 
 	protected void trimCache(long deadline, int factor) {
@@ -59,5 +73,4 @@ public class LocalBlockArena extends AbstractCacheBlockArena {
 		}
 		manager.recycleBlocks(releaseList);
 	}
-
 }

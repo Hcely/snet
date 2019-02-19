@@ -6,26 +6,31 @@ import com.snet.buffer.block.SNetBlock;
 import com.snet.util.BPTreeMap;
 
 public class AreaBlock extends ProxyBlock implements Releasable {
+	protected static final BPTreeMap.KeyComparator<Cell, Object> REMAIN_COMPARATOR = (o1, o2) -> {
+		final int remain1 = o1.remaining;
+		if (o2 instanceof Integer)
+			return remain1 < (Integer) o2 ? -1 : 1;
+		final int remain2 = ((Cell) o2).remaining;
+		return remain1 < remain2 ? -1 : (remain1 == remain2 ? 0 : 1);
+	};
+
 	protected final BPTreeMap<Integer, Cell> cells;
-	protected final AreaBlockArena arena;
+	protected final BPTreeMap<Cell, Void> sortCells;
 	protected long lastUsingTime;
 	protected int remaining;
 	protected boolean released;
 
 	public AreaBlock(AreaBlockArena arena, SNetBlock block) {
 		super(arena, block);
-		this.arena = arena;
 		this.cells = new BPTreeMap<>(2);
+		this.sortCells = new BPTreeMap<>(2, REMAIN_COMPARATOR, BPTreeMap.IDENTITY_EQUALS);
 		this.lastUsingTime = System.currentTimeMillis();
 		this.remaining = block.getCapacity();
 		this.released = false;
+
 		Cell cell = new Cell(this, block.getResourceOffset(), block.getCapacity());
 		cells.put(cell.offset, cell);
-		cell.sortNode = arena.addSort(cell);
-	}
-
-	public Cell firstCell() {
-		return cells.firstEntity().getValue();
+		cell.sortNode = sortCells.getEntity(cell, true);
 	}
 
 	public boolean isReleased() {
@@ -51,9 +56,21 @@ public class AreaBlock extends ProxyBlock implements Releasable {
 		return lastUsingTime;
 	}
 
-	private void allocate(int capacity) {
+	public SNetBlock allocate(int capacity) {
+		BPTreeMap.LeafNode<Cell, Void> node = sortCells.ceilEntity(capacity);
+		if (node == null)
+			return null;
+		Cell cell = node.getKey();
+		cell.removeSort();
 		this.remaining -= capacity;
-		this.lastUsingTime = System.currentTimeMillis();
+		final int blockOffset = cell.allocateOff(capacity);
+		if (cell.hasRemaining())
+			cell.sortNode = sortCells.getEntity(cell, true);
+		else {
+			cells.remove(cell.offset);
+			cell.sortNode = null;
+		}
+		return new DefBlock(blockOffset, capacity, arena, this);
 	}
 
 	public void recycle(SNetBlock block) {
@@ -65,12 +82,12 @@ public class AreaBlock extends ProxyBlock implements Releasable {
 			prevCell.removeSort();
 			prevCell.combine(newCell);
 			prevCell.tryCombineNextNode(node.getNext());
-			prevCell.sortNode = arena.addSort(prevCell);
+			prevCell.sortNode = sortCells.getEntity(prevCell, true);
 		} else {
 			if (node != null)
 				newCell.tryCombineNextNode(node.getNext());
 			cells.put(offset, newCell);
-			newCell.sortNode = arena.addSort(newCell);
+			newCell.sortNode = sortCells.getEntity(newCell, true);
 		}
 		this.remaining += capacity;
 	}
@@ -98,18 +115,9 @@ public class AreaBlock extends ProxyBlock implements Releasable {
 			}
 		}
 
-		public SNetBlock allocate(int capacity) {
-			this.remaining -= capacity;
-			areaBlock.allocate(capacity);
-			removeSort();
-			int blockOffset = offset + remaining;
-			if (remaining > 0)
-				this.sortNode = areaBlock.arena.addSort(this);
-			else {
-				areaBlock.cells.remove(offset);
-				this.sortNode = null;
-			}
-			return new DefBlock(blockOffset, capacity, areaBlock.arena, areaBlock);
+		public int allocateOff(int capacity) {
+			remaining -= capacity;
+			return offset + remaining;
 		}
 
 		public void combine(Cell block) {
@@ -118,6 +126,10 @@ public class AreaBlock extends ProxyBlock implements Releasable {
 
 		public boolean isNeighbor(Cell block) {
 			return this.offset + remaining == block.offset;
+		}
+
+		public boolean hasRemaining() {
+			return remaining > 0;
 		}
 
 		private void removeSort() {
