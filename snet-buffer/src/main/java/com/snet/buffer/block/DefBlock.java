@@ -14,6 +14,10 @@ public class DefBlock implements SNetBlock {
 		this(resourceOffset, capacity, parent.getResource().duplicate(), arena, parent);
 	}
 
+	public DefBlock(SNetResource resource, SNetBlockArena arena) {
+		this(0, resource.getCapacity(), resource, arena, null);
+	}
+
 	public DefBlock(int resourceOffset, int capacity, SNetResource resource, SNetBlockArena arena, SNetBlock parent) {
 		this.resourceOffset = resourceOffset;
 		this.capacity = capacity;

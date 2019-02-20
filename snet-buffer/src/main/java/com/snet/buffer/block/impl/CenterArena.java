@@ -1,95 +1,51 @@
 package com.snet.buffer.block.impl;
 
+import com.snet.buffer.block.DefBlock;
 import com.snet.buffer.block.SNetBlock;
+import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.resource.SNetResource;
-import com.snet.util.MathUtil;
 
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 class CenterArena extends AbstractBlockArena {
-	public static final int MAX_SHIFT = 24;
-	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;//16mb
-	protected final ConcurrentHashMap<SNetBlock, Void> blocks;
+	private static final int MAX_SHIFT = 24;
+	public static final int DEF_MAX_CAPACITY = 1 << MAX_SHIFT;//16mb
+	protected final int maxCapacity;
+	protected final int threshold;
+	protected final ConcurrentHashMap<SNetBlock, Boolean> blocks;
 
-	public CenterArena(BlockArenaManager manager, int blockCapacity) {
-		super(manager, null);
-		this.blockSize = new AtomicInteger(0);
+	public CenterArena(BlockArenaManager manager) {
+		this(manager, null);
+	}
+
+	public CenterArena(BlockArenaManager manager, SNetBlockArena parent) {
+		this(manager, parent, DEF_MAX_CAPACITY);
+	}
+
+	public CenterArena(BlockArenaManager manager, SNetBlockArena parent, int maxCapacity) {
+		super(manager, parent);
+		this.maxCapacity = maxCapacity;
+		this.threshold = maxCapacity + 1;
 		this.blocks = new ConcurrentHashMap<>();
-		this.blockCapacity = MathUtil.ceil2(blockCapacity);
-		this.threshold = this.blockCapacity + 1;
-		this.lock = new ReentrantLock();
 	}
 
 	@Override
 	protected boolean supports(int capacity) {
-		return capacity < MAX_CAPACITY + 1;
+		return capacity < threshold;
 	}
 
 	@Override
 	public SNetBlock allocate0(int capacity) {
-		SNetResource resource = manager.createResource(blockCapacity);
-		
-	}
-
-	private SNetBlock allocateImpl(int capacity) {
-		int size = 0, blockSize = this.blockSize.get() + 2;
-		for (Iterator<CenterBlock> it = null; size < blockSize; ) {
-			if ((it == null || !it.hasNext()) && !(it = blocks.iterator()).hasNext())
-				break;
-			CenterBlock block = it.next();
-			if (block.tryLock()) {
-				try {
-					if (!block.isReleased()) {
-						SNetBlock result = block.allocate(capacity);
-						if (result != null)
-							return result;
-					}
-				} finally {
-					++size;
-					block.unlock();
-				}
-			}
-		}
-		return null;
-	}
-
-	private SNetBlock allocateOrCreate(int capacity) {
-		if (lock.tryLock()) {
-			try {
-				SNetBlock result = allocateImpl(capacity);
-				if (result != null)
-					return result;
-				SNetResource resource = manager.createResource(blockCapacity);
-				CenterBlock block = new CenterBlock(resource, this);
-				blocks.add(block);
-				blockSize.incrementAndGet();
-				result = block.allocate(capacity);
-				return result;
-			} finally {
-				lock.unlock();
-			}
-		}
-		return null;
+		SNetResource resource = manager.createResource(capacity);
+		SNetBlock block = new DefBlock(resource, this);
+		blocks.put(block, Boolean.TRUE);
+		return block;
 	}
 
 	@Override
 	public void recycle(SNetBlock block) {
-		CenterBlock cBlock = (CenterBlock) block.getParent();
-		try {
-			cBlock.lock();
+		if (blocks.remove(block) != null)
 			block.release();
-			cBlock.recycle(block);
-		} finally {
-			cBlock.unlock();
-			manager.decBlockCount();
-		}
 	}
 
 	@Override

@@ -14,6 +14,10 @@ public class ProxyBlock implements SNetBlock {
 		this(arena, block, block.getResourceOffset(), block.getCapacity());
 	}
 
+	public ProxyBlock(SNetBlockArena arena, SNetBlock block, int capacity) {
+		this(arena, block, block.getResourceOffset(), capacity);
+	}
+
 	public ProxyBlock(SNetBlockArena arena, SNetBlock block, int resourceOffset, int capacity) {
 		this.arena = arena;
 		this.block = block;
