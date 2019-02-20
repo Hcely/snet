@@ -3,8 +3,11 @@ package com.snet.util;
 public class MathUtil {
 	public static int ceil2(int size) {
 		size = size > 0 ? size : 1;
-		int i = 32 - Integer.numberOfLeadingZeros(size - 1);
-		return 1 << i;
+		return 1 << ceilLog2(size - 1);
+	}
+
+	public static int ceilLog2(int size) {
+		return 32 - Integer.numberOfLeadingZeros(size - 1);
 	}
 
 	public static int ceilFactor(int size, int factor) {

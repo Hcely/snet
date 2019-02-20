@@ -5,7 +5,6 @@ import com.snet.Releasable;
 import com.snet.buffer.block.BlockArenaUtil;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockAllocator;
-import com.snet.buffer.block.SNetBlockArena;
 import com.snet.buffer.resource.SNetBufferResourceFactory;
 import com.snet.buffer.resource.SNetResource;
 import com.snet.util.MathUtil;
@@ -24,8 +23,8 @@ public class BlockArenaManager implements SNetBlockAllocator, Initializable, Rel
 	protected Timer monitor;
 	protected Worker<SNetBlock> reclaimer;
 	protected LongAdder blockCounter;
-	protected CenterBlockArena centerArena;
-	protected AreaBlockArena[] areaArenas;
+	protected CenterArena centerArena;
+	protected AreaArena[] areaArenas;
 	protected ConcurrentLinkedQueue<LocalBlockArena> localArenas;
 	protected ThreadLocal<LocalBlockArena> tlArenas;
 	
@@ -60,8 +59,8 @@ public class BlockArenaManager implements SNetBlockAllocator, Initializable, Rel
 
 	@Override
 	public void initialize() {
-		this.centerArena = new CenterBlockArena(this, blockCapacity);
-		this.areaArenas = new AreaBlockArena[areaNum];
+		this.centerArena = new CenterArena(this, blockCapacity);
+		this.areaArenas = new AreaArena[areaNum];
 		this.localArenas = new ConcurrentLinkedQueue<>();
 		this.tlArenas = ThreadLocal.withInitial(() -> {
 			Thread thread = Thread.currentThread();
@@ -144,11 +143,11 @@ public class BlockArenaManager implements SNetBlockAllocator, Initializable, Rel
 	}
 
 	protected static class MonitorTask extends TimerTask {
-		protected CenterBlockArena centerArena;
-		protected AreaBlockArena[] areaArenas;
+		protected CenterArena centerArena;
+		protected AreaArena[] areaArenas;
 		protected ConcurrentLinkedQueue<LocalBlockArena> localArenas;
 
-		public MonitorTask(CenterBlockArena centerArena, AreaBlockArena[] areaArenas, ConcurrentLinkedQueue<LocalBlockArena> localArenas) {
+		public MonitorTask(CenterArena centerArena, AreaArena[] areaArenas, ConcurrentLinkedQueue<LocalBlockArena> localArenas) {
 			this.centerArena = centerArena;
 			this.areaArenas = areaArenas;
 			this.localArenas = localArenas;
@@ -172,7 +171,7 @@ public class BlockArenaManager implements SNetBlockAllocator, Initializable, Rel
 					it.remove();
 				}
 			}
-			for (AreaBlockArena arena : areaArenas)
+			for (AreaArena arena : areaArenas)
 				arena.trimArena();
 			centerArena.trimArena();
 		}

@@ -7,22 +7,21 @@ import com.snet.util.MathUtil;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-class CenterBlockArena extends AbstractBlockArena {
-	protected final AtomicInteger blockSize;
-	protected final ConcurrentLinkedQueue<CenterBlock> blocks;
-	protected final int blockCapacity;
-	protected final int threshold;
-	protected final Lock lock;
+class CenterArena extends AbstractBlockArena {
+	public static final int MAX_SHIFT = 24;
+	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;//16mb
+	protected final ConcurrentHashMap<SNetBlock, Void> blocks;
 
-	public CenterBlockArena(BlockArenaManager manager, int blockCapacity) {
+	public CenterArena(BlockArenaManager manager, int blockCapacity) {
 		super(manager, null);
 		this.blockSize = new AtomicInteger(0);
-		this.blocks = new ConcurrentLinkedQueue<>();
+		this.blocks = new ConcurrentHashMap<>();
 		this.blockCapacity = MathUtil.ceil2(blockCapacity);
 		this.threshold = this.blockCapacity + 1;
 		this.lock = new ReentrantLock();
@@ -30,22 +29,13 @@ class CenterBlockArena extends AbstractBlockArena {
 
 	@Override
 	protected boolean supports(int capacity) {
-		return capacity < threshold;
+		return capacity < MAX_CAPACITY + 1;
 	}
 
 	@Override
 	public SNetBlock allocate0(int capacity) {
-		try {
-			for (SNetBlock result; ; ) {
-				if ((result = allocateImpl(capacity)) != null)
-					return result;
-				if ((result = allocateOrCreate(capacity)) != null)
-					return result;
-				Thread.yield();
-			}
-		} finally {
-			manager.incBlockCount();
-		}
+		SNetResource resource = manager.createResource(blockCapacity);
+		
 	}
 
 	private SNetBlock allocateImpl(int capacity) {
@@ -104,29 +94,5 @@ class CenterBlockArena extends AbstractBlockArena {
 
 	@Override
 	public void trimArena() {
-		final List<CenterBlock> idleBlocks = new LinkedList<>();
-		final long idleDeadline = System.currentTimeMillis() - manager.getCenterIdleTime();
-		for (CenterBlock block : blocks) {
-			if (block.enableReleased() && block.getLastUsingTime() < idleDeadline)
-				idleBlocks.add(block);
-		}
-		if (idleBlocks.isEmpty()) return;
-		for (CenterBlock block : idleBlocks) {
-			if (block.tryLock()) {
-				try {
-					if (block.getLastUsingTime() < idleDeadline && block.enableReleased())
-						block.release();
-				} finally {
-					block.unlock();
-				}
-			}
-		}
-		for (Iterator<CenterBlock> it = blocks.iterator(); it.hasNext(); ) {
-			CenterBlock block = it.next();
-			if (block.isReleased()) {
-				blockSize.decrementAndGet();
-				it.remove();
-			}
-		}
 	}
 }

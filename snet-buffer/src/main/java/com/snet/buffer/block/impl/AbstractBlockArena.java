@@ -6,10 +6,12 @@ import com.snet.buffer.block.SNetBlockArena;
 public abstract class AbstractBlockArena implements SNetBlockArena {
 	protected final BlockArenaManager manager;
 	protected final SNetBlockArena parent;
+	protected long lastUsingTime;
 
 	public AbstractBlockArena(BlockArenaManager manager, SNetBlockArena parent) {
 		this.manager = manager;
 		this.parent = parent;
+		this.lastUsingTime = System.currentTimeMillis();
 	}
 
 	@Override
@@ -19,8 +21,10 @@ public abstract class AbstractBlockArena implements SNetBlockArena {
 
 	@Override
 	public SNetBlock allocate(int capacity) {
-		if (supports(capacity))
+		if (supports(capacity)) {
+			this.lastUsingTime = System.currentTimeMillis();
 			return allocate0(capacity);
+		}
 		return parent.allocate(capacity);
 	}
 
