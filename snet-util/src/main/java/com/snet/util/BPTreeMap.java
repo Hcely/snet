@@ -33,7 +33,11 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 	public static final class LeafNode<K, V> extends BPTNode<K> implements EntryPlus<K, V> {
 		protected V value;
 
-		LeafNode(K key, V value) {
+		public LeafNode(K key) {
+			this(key, null);
+		}
+
+		public LeafNode(K key, V value) {
 			super(key);
 			this.value = value;
 		}
@@ -68,7 +72,6 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 			return key + "=" + value;
 		}
 	}
-
 
 	protected static class BlockNode<K> extends BPTNode<K> {
 		protected final boolean basicBlock;
@@ -160,8 +163,10 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		}
 
 		protected void removeNode(BPTNode<K> node) {
-			node.parent = null;
 			BPTNode<K> cPrev = node.prev, cNext = node.next;
+			node.parent = null;
+			node.prev = null;
+			node.next = null;
 			if (cPrev != null)
 				cPrev.next = cNext;
 			if (cNext != null)
@@ -275,7 +280,6 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		this(factor, comparator, DEF_EQUALS);
 	}
 
-
 	public BPTreeMap(int factor, KeyComparator<K, ?> comparator, BiPredicate<?, ?> equalFunc) {
 		factor = factor > 2 ? factor : 2;
 		this.comparator = comparator == null ? (KeyComparator<K, Object>) DEF_COMPARATOR : (KeyComparator<K, Object>) comparator;
@@ -296,9 +300,7 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		return size;
 	}
 
-
-	protected LeafNode<K, V> addNode(LeafNode<K, V> prev, K key, V value) {
-		LeafNode<K, V> node = new LeafNode<>(key, value);
+	protected LeafNode<K, V> addNode(LeafNode<K, V> prev, LeafNode<K, V> node) {
 		BlockNode<K> parent = prev != null ? prev.parent : (head == null ? root : head.parent);
 		parent.addNode(prev, node);
 		return node;
@@ -339,7 +341,14 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		LeafNode<K, V> prev = floorEntity(key);
 		if (prev != null && equalFunc.test(prev.key, key))
 			return prev;
-		return absentCreate ? addNode(prev, (K) key, null) : null;
+		return absentCreate ? addNode(prev, new LeafNode<>((K) key)) : null;
+	}
+
+	public LeafNode<K, V> putEntity(LeafNode<K, V> node) {
+		LeafNode<K, V> prev = floorEntity(node.key);
+		if (prev != null && equalFunc.test(prev.key, node.key))
+			return prev;
+		return addNode(prev, node);
 	}
 
 	@Override
@@ -363,7 +372,7 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		LeafNode<K, V> prev = floorEntity(key);
 		if (prev != null && equalFunc.test(prev.key, key))
 			return prev.getValue();
-		addNode(prev, key, value);
+		addNode(prev, new LeafNode<>(key, value));
 		return null;
 	}
 
@@ -450,7 +459,6 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		public boolean add(K k) {
 			return false;
 		}
-
 
 		@Override
 		public boolean addAll(Collection<? extends K> c) {
@@ -548,7 +556,6 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		public boolean remove(Object o) {
 			return map.removeEntity(o) != null;
 		}
-
 
 		@Override
 		public boolean retainAll(Collection<?> c) {

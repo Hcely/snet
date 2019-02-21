@@ -6,27 +6,33 @@ import com.snet.buffer.resource.SNetResource;
 
 public class ProxyBlock implements SNetBlock {
 	protected final SNetBlockArena arena;
+	protected final int resourceOffset;
+	protected final int capacity;
 	protected final SNetBlock block;
-	protected boolean released;
 
 	public ProxyBlock(SNetBlockArena arena, SNetBlock block) {
+		this(arena, block, block.getResourceOffset(), block.getCapacity());
+	}
+
+	public ProxyBlock(SNetBlockArena arena, SNetBlock block, int capacity) {
+		this(arena, block, block.getResourceOffset(), capacity);
+	}
+
+	public ProxyBlock(SNetBlockArena arena, SNetBlock block, int resourceOffset, int capacity) {
 		this.arena = arena;
 		this.block = block;
+		this.resourceOffset = resourceOffset;
+		this.capacity = capacity;
 	}
 
 	@Override
 	public int getCapacity() {
-		return block.getCapacity();
+		return capacity;
 	}
 
 	@Override
 	public int getResourceOffset() {
-		return block.getResourceOffset();
-	}
-
-	@Override
-	public boolean isReleased() {
-		return released;
+		return resourceOffset;
 	}
 
 	@Override
@@ -49,12 +55,11 @@ public class ProxyBlock implements SNetBlock {
 		arena.recycle(this);
 	}
 
-	@Override
-	public void release() {
-		released = true;
-	}
-
 	public SNetBlock getBlock() {
 		return block;
+	}
+
+	@Override
+	public void release() {
 	}
 }
