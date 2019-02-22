@@ -4,18 +4,29 @@ import com.snet.buffer.block.BlockArenaUtil;
 import com.snet.buffer.block.BlockCache;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
+import com.snet.util.MathUtil;
 
 import java.util.LinkedList;
 import java.util.List;
 
-public class LocalBlockArena extends AbstractCacheBlockArena {
-	public static final int MAX_SHIFT = 13;
+public class LocalBlockArena extends AbstractBlockArena {
+	private static final int MIN_SHIFT = 7;
+	public static final int MIN_CAPACITY = 1 << MIN_SHIFT;
+	private static final int MAX_SHIFT = 13;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
+
+	public static final int getIdx(int capacity) {
+		if (capacity < MIN_CAPACITY + 1)
+			return 0;
+		return MathUtil.ceilLog2(capacity) - MIN_SHIFT;
+	}
+
 	protected final Thread thread;
+	protected BlockCache[] caches;
 	protected boolean alive;
 
 	public LocalBlockArena(BlockArenaManager manager, SNetBlockArena parent) {
-		super(manager, parent, BlockArenaUtil.getCaches(MAX_SHIFT - BlockArenaUtil.MIN_SHIFT, 8, 64));
+		super(manager, parent);
 		this.thread = Thread.currentThread();
 		this.alive = true;
 	}
@@ -30,20 +41,18 @@ public class LocalBlockArena extends AbstractCacheBlockArena {
 	}
 
 	@Override
-	protected SNetBlock allocate1(int capacity) {
-		return new ProxyBlock(this, parent.allocate(capacity));
+	protected SNetBlock allocate0(int capacity) {
+		SNetBlock block = caches[getIdx(capacity)].poll();
+		return block == null ? allocateImpl(capacity) : block;
+	}
+
+	protected SNetBlock allocateImpl(int capacity) {
+		return null;
 	}
 
 	@Override
 	public void recycle(SNetBlock block) {
-		if (!alive || manager.released || !putCache(block))
-			recycle0(block);
-	}
 
-	@Override
-	protected void recycle0(SNetBlock block) {
-		block.release();
-		manager.recycleBlock(((ProxyBlock) block).getBlock());
 	}
 
 	public boolean isAlive() {
@@ -52,18 +61,18 @@ public class LocalBlockArena extends AbstractCacheBlockArena {
 
 	@Override
 	public void trimArena() {
-		if (thread.isAlive() && !manager.released)
-			trimCache(System.currentTimeMillis() - manager.getLocalIdleTime(), -2);
-		else {
+		if (!thread.isAlive() || manager.released) {
 			alive = false;
-			trimCache(0, 0);
+			trimCache(0);
+		} else if (lastUsingTime < System.currentTimeMillis() - manager.getLocalIdleTime()) {
+			trimCache(-2);
 		}
 	}
 
-	protected void trimCache(long deadline, int factor) {
+	protected void trimCache(int factor) {
 		List<SNetBlock> list = new LinkedList<>();
 		for (BlockCache cache : caches)
-			cache.recycleCache(list, deadline, factor);
+			cache.recycleCache(list, factor);
 		if (list.isEmpty())
 			return;
 		List<SNetBlock> releaseList = new LinkedList<>();

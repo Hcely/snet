@@ -9,7 +9,6 @@ import com.snet.util.MathUtil;
 import javafx.scene.control.Cell;
 
 public class ProvinceBlock extends ProxyBlock implements SNetAllocatableBlock, Releasable {
-
 	protected final byte[] tree;
 	protected final byte[] depths;
 	protected final int depth;
@@ -22,11 +21,9 @@ public class ProvinceBlock extends ProxyBlock implements SNetAllocatableBlock, R
 
 	public ProvinceBlock(AreaArena arena, SNetBlock block, int unitLen) {
 		super(arena, block, MathUtil.floor2(block.getCapacity() / (unitLen = MathUtil.ceil2(unitLen))));
-
 		this.lastUsingTime = System.currentTimeMillis();
 		this.remaining = capacity;
 		this.released = false;
-
 		this.depth = MathUtil.floorLog2(capacity / unitLen) + 1;
 		this.unitLenShift = MathUtil.ceilLog2(unitLen);
 		this.lenShift = unitLenShift + depth - 1;
@@ -69,17 +66,22 @@ public class ProvinceBlock extends ProxyBlock implements SNetAllocatableBlock, R
 			return null;
 		int idx = 1;
 		for (int i = 0; i < d; ++i) {
-			idx = (idx << 1);
+			idx <<= 1;
 			if (tree[idx] > d)
 				idx ^= 1;
 		}
 		updateAlloc(idx);
-		int offset = getOffset(idx);
+		this.lastUsingTime = System.currentTimeMillis();
+		this.remaining -= capacity;
+		final int offset = getOffset(idx);
 		return new DefBlock(offset, capacity, arena, this);
 	}
 
 	public void recycle(SNetBlock block) {
-
+		block.release();
+		int idx = getIdx(block.getResourceOffset(), block.getCapacity());
+		updateFree(idx);
+		remaining += block.getCapacity();
 	}
 
 	protected int getCapacityDepth(int capacity) {
@@ -132,5 +134,4 @@ public class ProvinceBlock extends ProxyBlock implements SNetAllocatableBlock, R
 	protected static final byte min(byte a, byte b) {
 		return a < b ? a : b;
 	}
-
 }
