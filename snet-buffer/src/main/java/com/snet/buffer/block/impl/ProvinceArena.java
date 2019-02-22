@@ -4,12 +4,12 @@ import com.snet.buffer.block.BlockCache;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
 
-public class ProvinceArena extends AbstractCacheBlockArena {
+public class ProvinceArena extends AbstractBlockArena {
 	public static final int MAX_SHIFT = 20;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
 
-	public ProvinceArena(BlockArenaManager manager, SNetBlockArena parent, BlockCache[] caches) {
-		super(manager, parent, caches);
+	public ProvinceArena(BlockArenaManager manager, SNetBlockArena parent) {
+		super(manager, parent);
 	}
 
 	@Override
@@ -18,12 +18,12 @@ public class ProvinceArena extends AbstractCacheBlockArena {
 	}
 
 	@Override
-	protected SNetBlock allocate1(int capacity) {
+	protected SNetBlock allocate0(int capacity) {
 		return null;
 	}
 
 	@Override
-	protected void recycle0(SNetBlock block) {
+	public void recycle(SNetBlock block) {
 
 	}
 
