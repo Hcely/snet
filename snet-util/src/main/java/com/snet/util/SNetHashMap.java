@@ -11,8 +11,6 @@ import java.util.function.Function;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SNetHashMap<K, V> implements MapPlus<K, V> {
-	public static final BiPredicate<Object, Object> DEF_EQUAL = Objects::equals;
-	public static final BiPredicate<Object, Object> IDENTITY_EQUAL = (o0, o1) -> o0 == o1;
 	public static final double DEF_FACTOR = 4;
 	public static final int DEF_INIT_CAPACITY = 16;
 	protected static int MAX_TABLE_CAPACITY = 1 << 24;
@@ -59,7 +57,7 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 
 	protected final double factor;
 	protected final int initCapacity;
-	protected BiPredicate<Object, Object> keyEqualFunc;
+	protected KeyEqualFunc<K> keyEqualFunc;
 
 	protected int size;
 	protected int threshold;
@@ -76,24 +74,24 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 	public SNetHashMap(int initCapacity, double factor) {
 		this.factor = factor < 0.1 ? 0.1 : (factor < 256 ? factor : 256);
 		this.initCapacity = Math.max(initCapacity, 4);
-		setKeyEqualFunc(DEF_EQUAL);
+		setKeyEqualFunc(KeyEqualFunc.DEF_EQUAL);
 		reset();
 	}
 
-	public SNetHashMap<K, V> setKeyEqualFunc(BiPredicate<Object, Object> keyEqualFunc) {
-		this.keyEqualFunc = keyEqualFunc == null ? DEF_EQUAL : keyEqualFunc;
+	public SNetHashMap<K, V> setKeyEqualFunc(KeyEqualFunc<K> keyEqualFunc) {
+		this.keyEqualFunc = keyEqualFunc == null ? KeyEqualFunc.DEF_EQUAL : keyEqualFunc;
 		return this;
 	}
 
 	@Override
 	public EntryPlus<K, V> getEntity(Object key, boolean absentCreate) {
-		final BiPredicate<Object, Object> keyEqualFunc = this.keyEqualFunc;
+		final KeyEqualFunc<K> keyEqualFunc = this.keyEqualFunc;
 		final HashNode<K, V>[] tables = this.tables;
 		final int hash = MapPlus.hash(key);
 		final int idx = hash & (tables.length - 1);
 		HashNode<K, V> node = tables[idx];
 		for (; node != null; node = node.next) {
-			if (node.hash == hash && keyEqualFunc.test(node.key, key))
+			if (node.hash == hash && keyEqualFunc.equals(node.key, key))
 				return node;
 		}
 		if (absentCreate) {
@@ -136,12 +134,12 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 	}
 
 	protected EntryPlus<K, V> removeEntity(Object key, Object value, boolean equalValue) {
-		final BiPredicate<Object, Object> equalFunc = this.keyEqualFunc;
+		final KeyEqualFunc<K> equalFunc = this.keyEqualFunc;
 		final HashNode<K, V>[] tables = this.tables;
 		final int hash = MapPlus.hash(key);
 		final int idx = hash & (tables.length - 1);
 		for (HashNode<K, V> node = tables[idx], prev = null; node != null; prev = node, node = node.next) {
-			if (node.hash == hash && equalFunc.test(node.key, key)) {
+			if (node.hash == hash && equalFunc.equals(node.key, key)) {
 				if (equalValue && !Objects.equals(node.value, value))
 					return null;
 				removeNode(tables, idx, prev, node);

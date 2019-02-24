@@ -21,13 +21,12 @@ import java.util.concurrent.atomic.LongAdder;
 public class BlockArenaManager implements SNetBlockAllocator, Initializable, Releasable {
 	protected final SNetBufferResourceFactory resourceFactory;
 	protected Timer monitor;
-	protected Worker<SNetBlock> reclaimer;
 	protected LongAdder blockCounter;
 	protected CenterArena centerArena;
 	protected AreaArena[] areaArenas;
 	protected ConcurrentLinkedQueue<LocalBlockArena> localArenas;
 	protected ThreadLocal<LocalBlockArena> tlArenas;
-	
+
 	protected int blockCapacity;
 	protected int areaNum;
 	protected int centerIdleTime;
@@ -126,20 +125,6 @@ public class BlockArenaManager implements SNetBlockAllocator, Initializable, Rel
 
 	public int getLocalIdleTime() {
 		return localIdleTime;
-	}
-
-	protected static class RecycleRunner implements Runnable {
-		protected final List<SNetBlock> blocks;
-
-		public RecycleRunner(List<SNetBlock> blocks) {
-			this.blocks = blocks;
-		}
-
-		@Override
-		public void run() {
-			for (SNetBlock block : blocks)
-				block.recycle();
-		}
 	}
 
 	protected static class MonitorTask extends TimerTask {

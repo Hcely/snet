@@ -9,7 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-class AreaArena extends AbstractCacheBlockArena {
+class AreaArena extends AbstractBlockArena {
 	public static final int MAX_SHIFT = 13;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
 	public static final int BLOCK_LEN = 1 << 21;

@@ -13,6 +13,4 @@ public interface SNetBlock extends Releasable {
 	SNetBlockArena getArena();
 
 	SNetBlock getParent();
-
-	void recycle();
 }

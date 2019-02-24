@@ -1,6 +1,5 @@
 package com.snet.buffer.block.impl;
 
-import com.snet.buffer.block.BlockArenaUtil;
 import com.snet.buffer.block.BlockCache;
 import com.snet.buffer.block.SNetBlock;
 import com.snet.buffer.block.SNetBlockArena;
@@ -28,6 +27,7 @@ public class LocalBlockArena extends AbstractBlockArena {
 	public LocalBlockArena(BlockArenaManager manager, SNetBlockArena parent) {
 		super(manager, parent);
 		this.thread = Thread.currentThread();
+		this.caches = new BlockCache[MAX_SHIFT - MIN_SHIFT + 1];
 		this.alive = true;
 	}
 
@@ -47,12 +47,14 @@ public class LocalBlockArena extends AbstractBlockArena {
 	}
 
 	protected SNetBlock allocateImpl(int capacity) {
-		return null;
+		SNetBlock block = parent.allocate(capacity);
+		return new ProxyBlock(this, block);
 	}
 
 	@Override
 	public void recycle(SNetBlock block) {
-
+		if (manager.released || block.getArena() != this || !caches[getIdx(block.getCapacity())].add(block))
+			block.getArena().getParent().recycle(block);
 	}
 
 	public boolean isAlive() {

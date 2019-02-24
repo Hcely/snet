@@ -50,11 +50,6 @@ public class ProxyBlock implements SNetBlock {
 		return block.getParent();
 	}
 
-	@Override
-	public void recycle() {
-		arena.recycle(this);
-	}
-
 	public SNetBlock getBlock() {
 		return block;
 	}
