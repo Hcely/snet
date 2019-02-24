@@ -13,7 +13,7 @@ public class ProvinceArena extends AbstractBlockArena {
 
 	public ProvinceArena(BlockArenaManager manager, SNetBlockArena parent) {
 		super(manager, parent);
-		caches = new BlockCache[MAX_CAPACITY - MIN_SHIFT + 1];
+		this.caches = new BlockCache[MAX_CAPACITY - MIN_SHIFT + 1];
 	}
 
 	@Override
@@ -37,4 +37,7 @@ public class ProvinceArena extends AbstractBlockArena {
 
 	}
 
+	protected static final class BlockList {
+
+	}
 }

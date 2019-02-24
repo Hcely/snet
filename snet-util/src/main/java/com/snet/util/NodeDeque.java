@@ -4,10 +4,12 @@ import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.function.Function;
 
-public class NodeDeque<E> implements Deque<E> {
+public class NodeDeque<E> implements List<E>, Deque<E> {
 	public static final class Node<E> implements EntryValue<E> {
 		protected NodeDeque<E> deque;
 		protected Node<E> next, prev;
@@ -61,6 +63,23 @@ public class NodeDeque<E> implements Deque<E> {
 		node.deque = this;
 		++size;
 	}
+
+	public void addNode(Node<E> prev, Node<E> node) {
+		if (prev == null)
+			addNode(node, true);
+		else {
+			node.prev = prev;
+			node.next = prev.next;
+			prev.next = node;
+			if (node.next == null)
+				tail = node;
+			else
+				node.next.prev = node;
+			node.deque = this;
+			++size;
+		}
+	}
+
 
 	protected boolean removeNode(Node<E> node) {
 		if (node.deque != this)
@@ -262,6 +281,11 @@ public class NodeDeque<E> implements Deque<E> {
 	}
 
 	@Override
+	public boolean addAll(int index, Collection<? extends E> c) {
+		return false;
+	}
+
+	@Override
 	public boolean removeAll(Collection<?> c) {
 		boolean b = false;
 		for (Object e : c) {
@@ -289,6 +313,51 @@ public class NodeDeque<E> implements Deque<E> {
 	public void clear() {
 		head = tail = null;
 		size = 0;
+	}
+
+	@Override
+	public E get(int index) {
+		return null;
+	}
+
+	@Override
+	public E set(int index, E element) {
+		return null;
+	}
+
+	@Override
+	public void add(int index, E element) {
+
+	}
+
+	@Override
+	public E remove(int index) {
+		return null;
+	}
+
+	@Override
+	public int indexOf(Object o) {
+		return 0;
+	}
+
+	@Override
+	public int lastIndexOf(Object o) {
+		return 0;
+	}
+
+	@Override
+	public ListIterator<E> listIterator() {
+		return null;
+	}
+
+	@Override
+	public ListIterator<E> listIterator(int index) {
+		return null;
+	}
+
+	@Override
+	public List<E> subList(int fromIndex, int toIndex) {
+		return null;
 	}
 
 	@Override
