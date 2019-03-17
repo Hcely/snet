@@ -9,7 +9,7 @@ public class ProvinceArena extends AbstractBlockArena {
 	public static final int MIN_CAPACITY = 1 << MIN_SHIFT;
 	private static final int MAX_SHIFT = 20;
 	public static final int MAX_CAPACITY = 1 << MAX_SHIFT;
-	protected BlockCache[] caches;
+	protected final BlockCache[] caches;
 
 	public ProvinceArena(BlockArenaManager manager, SNetBlockArena parent) {
 		super(manager, parent);
@@ -37,7 +37,5 @@ public class ProvinceArena extends AbstractBlockArena {
 
 	}
 
-	protected static final class BlockList {
 
-	}
 }
