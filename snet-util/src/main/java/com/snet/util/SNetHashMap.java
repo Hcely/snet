@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class SNetHashMap<K, V> implements MapPlus<K, V> {
@@ -18,7 +19,6 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 	public static void setMaxTableCapacity(int maxTableCapacity) {
 		MAX_TABLE_CAPACITY = maxTableCapacity;
 	}
-
 
 	protected static class HashNode<K, V> implements EntryPlus<K, V> {
 		protected final int hash;
@@ -57,6 +57,7 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 
 	protected final double factor;
 	protected final int initCapacity;
+	protected ToIntFunction<Object> hashFunc;
 	protected KeyEqualFunc<K> keyEqualFunc;
 
 	protected int size;
@@ -74,8 +75,14 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 	public SNetHashMap(int initCapacity, double factor) {
 		this.factor = factor < 0.1 ? 0.1 : (factor < 256 ? factor : 256);
 		this.initCapacity = Math.max(initCapacity, 4);
+		setHashFunc(Object::hashCode);
 		setKeyEqualFunc(KeyEqualFunc.DEF_EQUAL);
 		reset();
+	}
+
+	public SNetHashMap<K, V> setHashFunc(ToIntFunction<Object> hashFunc) {
+		this.hashFunc = hashFunc == null ? Object::hashCode : hashFunc;
+		return this;
 	}
 
 	public SNetHashMap<K, V> setKeyEqualFunc(KeyEqualFunc<K> keyEqualFunc) {
@@ -87,7 +94,7 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 	public EntryPlus<K, V> getEntity(Object key, boolean absentCreate) {
 		final KeyEqualFunc<K> keyEqualFunc = this.keyEqualFunc;
 		final HashNode<K, V>[] tables = this.tables;
-		final int hash = MapPlus.hash(key);
+		final int hash = MapPlus.hash(key == null ? 0 : hashFunc.applyAsInt(key));
 		final int idx = hash & (tables.length - 1);
 		HashNode<K, V> node = tables[idx];
 		for (; node != null; node = node.next) {
@@ -136,7 +143,7 @@ public class SNetHashMap<K, V> implements MapPlus<K, V> {
 	protected EntryPlus<K, V> removeEntity(Object key, Object value, boolean equalValue) {
 		final KeyEqualFunc<K> equalFunc = this.keyEqualFunc;
 		final HashNode<K, V>[] tables = this.tables;
-		final int hash = MapPlus.hash(key);
+		final int hash = MapPlus.hash(key == null ? 0 : hashFunc.applyAsInt(key));
 		final int idx = hash & (tables.length - 1);
 		for (HashNode<K, V> node = tables[idx], prev = null; node != null; prev = node, node = node.next) {
 			if (node.hash == hash && equalFunc.equals(node.key, key)) {

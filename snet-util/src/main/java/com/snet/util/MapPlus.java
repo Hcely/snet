@@ -3,9 +3,8 @@ package com.snet.util;
 import java.util.Map;
 
 public interface MapPlus<K, V> extends Map<K, V>, Iterable<EntryPlus<K, V>> {
-	static int hash(Object key) {
-		int h;
-		return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
+	static int hash(int hashCode) {
+		return hashCode ^ (hashCode >>> 16);
 	}
 
 	default EntryPlus<K, V> getEntity(Object key) {

@@ -13,7 +13,7 @@ public class BitmapBlock extends ProxyBlock implements SNetAllocatableBlock, Rel
 	protected int cellLength;
 	protected int cellLengthShift;
 	protected int mapSize;
-	protected int remainSize;
+	protected int remain;
 	protected Bitmap bitmap;
 
 	public BitmapBlock(SNetBlockArena arena, SNetBlock block, int cellLength) {
@@ -21,13 +21,17 @@ public class BitmapBlock extends ProxyBlock implements SNetAllocatableBlock, Rel
 		this.cellLength = MathUtil.ceil2(cellLength);
 		this.cellLengthShift = MathUtil.ceilLog2(this.cellLength);
 		this.mapSize = getCapacity() >>> cellLengthShift;
-		this.remainSize = mapSize;
+		this.remain = mapSize;
 		this.bitmap = new Bitmap(mapSize);
 	}
 
 	@Override
 	public void recycle(SNetBlock block) {
 
+	}
+
+	public int getRemain() {
+		return remain;
 	}
 
 	@Override
