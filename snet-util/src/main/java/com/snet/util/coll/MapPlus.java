@@ -1,8 +1,10 @@
-package com.snet.util;
+package com.snet.util.coll;
+
+import com.snet.Clearable;
 
 import java.util.Map;
 
-public interface MapPlus<K, V> extends Map<K, V>, Iterable<EntryPlus<K, V>> {
+public interface MapPlus<K, V> extends Map<K, V>, Iterable<EntryPlus<K, V>>, Clearable {
 	static int hash(int hashCode) {
 		return hashCode ^ (hashCode >>> 16);
 	}

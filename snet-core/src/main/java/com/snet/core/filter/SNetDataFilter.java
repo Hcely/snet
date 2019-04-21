@@ -5,7 +5,7 @@ import com.snet.io.SNetBuffer;
 
 public interface SNetDataFilter {
 
-	SNetBuffer onEncode(SNetSession session, SNetBuffer buffer);
+	boolean onEncode(SNetSession session, SNetBuffer buffer);
 
 	SNetBuffer onDecode(SNetSession session, SNetBuffer buffer);
 }

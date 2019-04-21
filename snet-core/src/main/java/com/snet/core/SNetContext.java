@@ -3,8 +3,9 @@ package com.snet.core;
 import com.snet.core.filter.SNetDataFilter;
 
 public interface SNetContext extends SNetObject {
-	void addFilter(SNetDataFilter filter);
+	void addFilter(String filterName, SNetDataFilter filter);
 
-	void removeFilter(SNetDataFilter filter);
+	SNetDataFilter removeFilter(String filterName);
 
+	SNetDataFilter replaceFilter(String oldFilterName, String newFilterName, SNetDataFilter newFilter);
 }

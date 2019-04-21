@@ -4,7 +4,6 @@ import java.util.Arrays;
 
 public class Bitmap {
 	private static final long L = 0xFFFF_FFFF_FFFF_FFFFL;
-	private static final long[] EMPTY = {};
 
 	public static final long getMask(int off) {
 		return 1L << (63 - off);
@@ -44,7 +43,7 @@ public class Bitmap {
 		return ((~value) | ~mask) & value;
 	}
 
-	protected long[] map = EMPTY;
+	protected long[] map = RuntimeUtil.EMPTY_LONGS;
 	protected int capacity = 0;
 
 	public Bitmap() {

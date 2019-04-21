@@ -1,10 +1,11 @@
-package com.snet.util;
+package com.snet.util.ring;
 
 import com.snet.Shutdownable;
+import com.snet.util.thread.DefThreadCtrl;
+import com.snet.util.MathUtil;
+import com.snet.util.thread.ThreadCtrl;
 
-import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 @SuppressWarnings("unchecked")
 public class ProducerConsumerBuffer<E> implements Shutdownable {

@@ -1,4 +1,6 @@
-package com.snet.util;
+package com.snet.util.coll;
+
+import com.snet.util.MathUtil;
 
 import java.util.Enumeration;
 import java.util.concurrent.atomic.AtomicLong;

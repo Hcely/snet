@@ -1,7 +1,10 @@
-package com.snet.util;
+package com.snet.util.ring;
 
-import com.snet.Builder;
+import com.snet.SNetBuilder;
 import com.snet.Shutdownable;
+import com.snet.util.thread.DefThreadCtrl;
+import com.snet.util.MathUtil;
+import com.snet.util.thread.ThreadCtrl;
 
 import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLong;
@@ -34,7 +37,7 @@ public class RingBuffer<T> implements Shutdownable {
 	protected boolean destroy;
 	protected boolean loop;
 
-	public RingBuffer(int consumerStateSize, int capacity, Builder<T> builder) {
+	public RingBuffer(int consumerStateSize, int capacity, SNetBuilder<T> builder) {
 		capacity = MathUtil.ceil2(capacity < MIN_CAPACITY ? MIN_CAPACITY : capacity);
 		consumerStateSize = consumerStateSize < 1 ? 1 : consumerStateSize;
 

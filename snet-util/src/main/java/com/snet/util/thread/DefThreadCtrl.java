@@ -1,4 +1,4 @@
-package com.snet.util;
+package com.snet.util.thread;
 
 import java.util.concurrent.locks.LockSupport;
 

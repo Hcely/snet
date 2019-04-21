@@ -1,8 +1,6 @@
 package com.snet.util.thread;
 
-import com.snet.util.DefThreadCtrl;
-import com.snet.util.FixedQueue;
-import com.snet.util.ProducerConsumerBuffer;
+import com.snet.util.ring.ProducerConsumerBuffer;
 
 import java.util.LinkedList;
 import java.util.List;

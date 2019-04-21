@@ -1,6 +1,5 @@
 package com.snet.util.thread;
 
-import com.snet.util.DefThreadCtrl;
 import com.snet.util.RuntimeUtil;
 
 import java.util.LinkedList;

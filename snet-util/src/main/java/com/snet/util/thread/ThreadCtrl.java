@@ -1,4 +1,6 @@
-package com.snet.util;
+package com.snet.util.thread;
+
+import com.snet.util.RuntimeUtil;
 
 public interface ThreadCtrl {
 	int PARK_TIMEOUT = 10000;

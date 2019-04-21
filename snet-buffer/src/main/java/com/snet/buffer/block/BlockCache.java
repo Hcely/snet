@@ -1,6 +1,6 @@
 package com.snet.buffer.block;
 
-import com.snet.util.FixedQueue;
+import com.snet.util.coll.FixedQueue;
 
 import java.util.List;
 

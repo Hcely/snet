@@ -1,6 +1,6 @@
 package com.pj.snet;
 
-import com.snet.util.BPTreeMap;
+import com.snet.util.coll.BPTreeMap;
 
 import java.util.Comparator;
 import java.util.Map;

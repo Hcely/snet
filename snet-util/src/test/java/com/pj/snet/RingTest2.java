@@ -1,7 +1,6 @@
 package com.pj.snet;
 
-import com.snet.util.ProducerConsumerBuffer;
-import com.snet.util.RingBuffer;
+import com.snet.util.ring.ProducerConsumerBuffer;
 
 import java.util.concurrent.atomic.AtomicLong;
 

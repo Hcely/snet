@@ -1,4 +1,4 @@
-package com.snet.util;
+package com.snet.util.coll;
 
 import java.lang.reflect.Array;
 import java.util.Collection;

@@ -1,7 +1,7 @@
 package com.snet.promise.state;
 
 import com.snet.promise.PromiseListener;
-import com.snet.util.IntHashMap;
+import com.snet.util.coll.IntHashMap;
 
 import java.util.LinkedList;
 import java.util.List;
