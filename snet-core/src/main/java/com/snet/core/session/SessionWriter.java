@@ -1,7 +1,7 @@
-package com.snet.core;
+package com.snet.core.session;
 
 import com.snet.io.SNetBuffer;
 
-public interface SNetWriter {
+public interface SessionWriter {
 	void write(SNetSession session, SNetBuffer buffer);
 }

@@ -1,6 +1,6 @@
 package com.snet.core.filter;
 
-import com.snet.core.SNetSession;
+import com.snet.core.session.SNetSession;
 import com.snet.io.SNetBuffer;
 
 public interface SNetDataFilter {

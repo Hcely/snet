@@ -1,8 +1,8 @@
-package com.snet.core;
+package com.snet.core.session;
 
 import com.snet.core.filter.SNetDataFilter;
 
-public interface SNetContext extends SNetObject {
+public interface SessionFilterChain {
 	void addFilter(String filterName, SNetDataFilter filter);
 
 	SNetDataFilter removeFilter(String filterName);

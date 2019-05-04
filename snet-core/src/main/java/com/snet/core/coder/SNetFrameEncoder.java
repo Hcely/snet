@@ -1,6 +1,6 @@
 package com.snet.core.coder;
 
-import com.snet.core.SNetSession;
+import com.snet.core.session.SNetSession;
 import com.snet.core.frame.SNetFrame;
 import com.snet.io.SNetBuffer;
 
