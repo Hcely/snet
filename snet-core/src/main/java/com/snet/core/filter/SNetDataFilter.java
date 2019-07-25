@@ -1,11 +1,11 @@
 package com.snet.core.filter;
 
 import com.snet.core.session.SNetSession;
-import com.snet.io.SNetBuffer;
+import com.snet.io.BufferView;
 
 public interface SNetDataFilter {
 
-	boolean onEncode(SNetSession session, SNetBuffer buffer);
+	boolean onEncode(SNetSession session, BufferView buffer);
 
-	SNetBuffer onDecode(SNetSession session, SNetBuffer buffer);
+	BufferView onDecode(SNetSession session, BufferView buffer);
 }
