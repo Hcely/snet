@@ -11,7 +11,7 @@ import java.util.function.Consumer;
 public class SimpleWorkerPool<T> implements WorkService<T> {
 	protected static int i = 0;
 
-	protected static final synchronized String nextName() {
+	protected static synchronized String nextName() {
 		String str = "SimpleWorkerPool-" + i;
 		++i;
 		return str;

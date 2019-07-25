@@ -1,6 +1,6 @@
 package com.snet.util.coll;
 
-import com.snet.SNetBuilder;
+import com.snet.IBuilder;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -18,11 +18,11 @@ public class SNetHashMap<K, V> extends AbsHashMap<V> implements MapPlus<K, V> {
 	public static final int DEF_INIT_CAPACITY = 16;
 	public static final int MAX_TABLE_CAPACITY = 1 << 24;
 
-	public static final <K, V> Builder<K, V> builder() {
+	public static <K, V> Builder<K, V> builder() {
 		return new Builder<>();
 	}
 
-	public static class Builder<K, V> implements SNetBuilder<SNetHashMap<K, V>> {
+	public static class Builder<K, V> implements IBuilder<SNetHashMap<K, V>> {
 		protected int initCapacity = DEF_INIT_CAPACITY;
 		protected double factor = DEF_FACTOR;
 		protected ToIntFunction<Object> hashFunc;
@@ -172,12 +172,12 @@ public class SNetHashMap<K, V> extends AbsHashMap<V> implements MapPlus<K, V> {
 	}
 
 	protected EntryPlus<K, V> removeEntity(Object key, Object value, boolean equalValue) {
-		final KeyEqualFunc<K> equalFunc = this.keyEqualFunc;
+		final KeyEqualFunc<K> keyEqualFunc = this.keyEqualFunc;
 		final KeyNodeEntry<K, V>[] tables = this.tables;
 		final int hash = MapPlus.hash(key == null ? 0 : hashFunc.applyAsInt(key));
 		final int idx = hash & (tables.length - 1);
 		for (KeyNodeEntry<K, V> node = tables[idx], prev = null; node != null; prev = node, node = node.next) {
-			if (node.hash == hash && equalFunc.equals(node.key, key)) {
+			if (node.hash == hash && keyEqualFunc.equals(node.key, key)) {
 				if (equalValue && !Objects.equals(node.value, value))
 					return null;
 				removeNode(tables, idx, prev, node);

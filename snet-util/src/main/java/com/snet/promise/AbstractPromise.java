@@ -4,7 +4,8 @@ import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractPromise<T extends AbstractPromise<?>> implements Promise<T> {
-	private static final AtomicIntegerFieldUpdater<AbstractPromise> STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater(AbstractPromise.class, "state");
+	private static final AtomicIntegerFieldUpdater<AbstractPromise> STATE_UPDATER = AtomicIntegerFieldUpdater
+			.newUpdater(AbstractPromise.class, "state");
 	protected volatile ListenerNode head, tail;
 	protected static final int INIT = 0;
 	protected static final int COMPLETING = 1;
@@ -50,7 +51,7 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		return (T) this;
 	}
 
-	private final boolean addListener0(PromiseListener<T> listener) {
+	private boolean addListener0(PromiseListener<T> listener) {
 		if (isFinish())
 			return false;
 		synchronized (this) {

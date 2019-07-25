@@ -30,11 +30,11 @@ public class ResultPromise<V> extends AbstractPromise<ResultPromise<V>> implemen
 	}
 
 	public boolean fail(int code) {
-		return fail(0, null);
+		return fail(code, null);
 	}
 
 	public boolean fail(int code, String message) {
-		return fail(0, null, null);
+		return fail(code, message, null);
 	}
 
 	public boolean fail(int code, String message, Throwable cause) {

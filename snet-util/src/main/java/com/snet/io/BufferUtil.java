@@ -3,19 +3,19 @@ package com.snet.io;
 import java.nio.ByteBuffer;
 
 public class BufferUtil {
-	public static final void writeShort(byte[] buf, int pos, int v) {
+	public static void writeShort(byte[] buf, int pos, int v) {
 		buf[pos++] = (byte) (0xFF & (v >>> 8));
 		buf[pos] = (byte) (0xFF & v);
 	}
 
-	public static final void writeInt(byte[] buf, int pos, int v) {
+	public static void writeInt(byte[] buf, int pos, int v) {
 		buf[pos++] = (byte) (0xFF & (v >>> 24));
 		buf[pos++] = (byte) (0xFF & (v >>> 16));
 		buf[pos++] = (byte) (0xFF & (v >>> 8));
 		buf[pos] = (byte) (0xFF & v);
 	}
 
-	public static final void writeLong(byte[] buf, int pos, long v) {
+	public static void writeLong(byte[] buf, int pos, long v) {
 		buf[pos++] = (byte) (0xFF & (v >>> 56));
 		buf[pos++] = (byte) (0xFF & (v >>> 48));
 		buf[pos++] = (byte) (0xFF & (v >>> 40));
@@ -26,14 +26,14 @@ public class BufferUtil {
 		buf[pos] = (byte) (0xFF & v);
 	}
 
-	public static final short readShort(byte[] buf, int pos) {
+	public static short readShort(byte[] buf, int pos) {
 		short v = buf[pos++];
 		v <<= 8;
 		v |= 0xFF & buf[pos];
 		return v;
 	}
 
-	public static final int readInt(byte[] buf, int pos) {
+	public static int readInt(byte[] buf, int pos) {
 		int v = buf[pos++];
 		v <<= 8;
 		v |= 0xFF & buf[pos++];
@@ -44,7 +44,7 @@ public class BufferUtil {
 		return v;
 	}
 
-	public static final long readLong(byte[] buf, int pos) {
+	public static long readLong(byte[] buf, int pos) {
 		long v = buf[pos++];
 		v <<= 8;
 		v |= 0xFF & buf[pos++];
@@ -63,7 +63,7 @@ public class BufferUtil {
 		return v;
 	}
 
-	public static final int writeNumber(BufferWriteView view, long i) {
+	public static int writeNumber(BufferWriteView view, long i) {
 		if (i == Long.MIN_VALUE) {
 			view.writeByte((byte) 1);
 			return 1;
@@ -86,7 +86,7 @@ public class BufferUtil {
 		return len;
 	}
 
-	public static final int writeNumber(byte[] buf, int off, long i) {
+	public static int writeNumber(byte[] buf, int off, long i) {
 		if (i == Long.MIN_VALUE) {
 			buf[off] = 1;
 			return 1;
@@ -110,7 +110,7 @@ public class BufferUtil {
 		return len;
 	}
 
-	public static final int writeNumber(ByteBuffer buf, long i) {
+	public static int writeNumber(ByteBuffer buf, long i) {
 		if (i == Long.MIN_VALUE) {
 			buf.put((byte) 1);
 			return 1;
@@ -133,7 +133,7 @@ public class BufferUtil {
 		return len;
 	}
 
-	public static final long readNumber(BufferReadView view) {
+	public static long readNumber(BufferReadView view) {
 		byte b = view.readByte();
 		if (b == 1)
 			return Long.MIN_VALUE;

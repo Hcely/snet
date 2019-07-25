@@ -11,19 +11,20 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 @SuppressWarnings("rawtypes")
 public abstract class FuturePromise<V> extends AbstractPromise<FuturePromise<V>> implements Future<V>, Runnable {
 
-	public static final FuturePromise<?> create(Runnable task) {
+	public static FuturePromise<?> create(Runnable task) {
 		return create(null, task);
 	}
 
-	public static final <V> FuturePromise<V> create(Runnable task, V result) {
+	public static <V> FuturePromise<V> create(Runnable task, V result) {
 		return new RunnerFuturePromise<>(task, result);
 	}
 
-	public static final <V> FuturePromise<V> create(Callable<V> task) {
+	public static <V> FuturePromise<V> create(Callable<V> task) {
 		return new CallerFuturePromise<>(task);
 	}
 
-	protected static final AtomicReferenceFieldUpdater<FuturePromise, Thread> THREAD_UPDATER = AtomicReferenceFieldUpdater.newUpdater(FuturePromise.class, Thread.class, "runner");
+	protected static final AtomicReferenceFieldUpdater<FuturePromise, Thread> THREAD_UPDATER = AtomicReferenceFieldUpdater
+			.newUpdater(FuturePromise.class, Thread.class, "runner");
 	protected static final int FINISH = 2;
 	protected static final int EXCEPTONAL = 3;
 	protected static final int CANCELED = 4;
