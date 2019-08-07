@@ -1,6 +1,8 @@
 package com.snet.buffer;
 
-public interface SNetResourceManager extends SNetAllocator<SNetResource> {
+import com.snet.ResourceManager;
+
+public interface SNetResourceManager extends SNetLongAllocator<SNetResource>, ResourceManager {
 	long getSumCapacity();
 
 	void recycle(SNetResource resource);

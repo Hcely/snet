@@ -15,23 +15,23 @@ public interface SNetResource extends Initializable, Releasable, Destroyable, Sl
 
 	Object getRawObject();
 
-	int getCapacity();
+	long getCapacity();
 
-	int write(int off, byte[] src, int srcOff, int srcLen);
+	int write(long off, byte[] src, int srcOff, int srcLen);
 
-	default int write(int off, ByteBuffer src) {
+	default int write(long off, ByteBuffer src) {
 		return write(off, src, src.remaining());
 	}
 
-	int write(int off, ByteBuffer src, int srcLen);
+	int write(long off, ByteBuffer src, int srcLen);
 
-	int write(int off, SNetResource src, int srcOff, int srcLen);
+	long write(long off, SNetResource src, long srcOff, long srcLen);
 
-	int read(int off, byte[] dst, int dstOff, int dstLen);
+	int read(long off, byte[] dst, int dstOff, int dstLen);
 
-	default int read(int off, ByteBuffer dst) {
+	default int read(long off, ByteBuffer dst) {
 		return read(off, dst, dst.remaining());
 	}
 
-	int read(int off, ByteBuffer dst, int dstLen);
+	int read(long off, ByteBuffer dst, int dstLen);
 }

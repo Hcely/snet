@@ -5,16 +5,16 @@ import com.snet.buffer.SNetResourceManager;
 
 import java.nio.ByteBuffer;
 
-public class SNetByteResource extends AbsSNetResource {
+public class ByteResource extends AbsResource {
 	protected byte[] buffer;
 
-	public SNetByteResource(SNetResourceManager manager, int capacity) {
+	public ByteResource(SNetResourceManager manager, int capacity) {
 		super(manager, capacity);
 	}
 
 	@Override
 	protected void initialize0() {
-		buffer = new byte[capacity];
+		buffer = new byte[(int) capacity];
 	}
 
 	@Override
@@ -33,30 +33,30 @@ public class SNetByteResource extends AbsSNetResource {
 	}
 
 	@Override
-	public int write(int off, byte[] src, int srcOff, int srcLen) {
+	public int write(long off, byte[] src, int srcOff, int srcLen) {
 		int len = enableLength(off, srcLen);
-		System.arraycopy(src, srcOff, this.buffer, off, len);
+		System.arraycopy(src, srcOff, this.buffer, (int) off, len);
 		return len;
 	}
 
 	@Override
-	public int write(int off, ByteBuffer src, int srcLen) {
+	public int write(long off, ByteBuffer src, int srcLen) {
 		int len = enableLength(off, srcLen);
-		src.get(buffer, off, len);
+		src.get(buffer, (int) off, len);
 		return len;
 	}
 
 	@Override
-	public int read(int off, byte[] dst, int dstOff, int dstLen) {
+	public int read(long off, byte[] dst, int dstOff, int dstLen) {
 		int len = enableLength(off, dstLen);
-		System.arraycopy(buffer, off, dst, dstOff, len);
+		System.arraycopy(buffer, (int) off, dst, dstOff, len);
 		return len;
 	}
 
 	@Override
-	public int read(int off, ByteBuffer dst, int dstLen) {
+	public int read(long off, ByteBuffer dst, int dstLen) {
 		int len = enableLength(off, dstLen);
-		dst.put(buffer, off, len);
+		dst.put(buffer, (int) off, len);
 		return len;
 	}
 }

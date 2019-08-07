@@ -72,19 +72,22 @@ public class Worker<T> implements Initializable, WorkService<T> {
 
 	@Override
 	public void execute(T task) {
-		if (destroy) return;
+		if (destroy)
+			return;
 		queue.add(task);
 	}
 
 	@Override
 	public void execute(Runnable task) {
-		if (destroy) return;
+		if (destroy)
+			return;
 		queue.add(task);
 	}
 
 	@Override
 	public <E> Future<E> submit(T task, E result) {
-		if (destroy) return null;
+		if (destroy)
+			return null;
 		FuturePromise<E> promise = FuturePromise.create(new TaskRunner(consumer, task), result);
 		queue.add(promise);
 		return promise;

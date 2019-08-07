@@ -79,8 +79,7 @@ public class IntHashMap<V> extends AbsHashMap<V> implements Iterable<IntEntry<V>
 				return node;
 		}
 		if (absentCreate) {
-			node = createNode(hash, key);
-			addNode(tables, idx, node);
+			addNode(tables, idx, node = createNode(hash, key));
 		}
 		return node;
 	}

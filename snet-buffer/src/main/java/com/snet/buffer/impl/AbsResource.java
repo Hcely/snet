@@ -8,20 +8,20 @@ import com.snet.buffer.exception.SNetBufferException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class AbsSNetResource implements SNetResource {
+public abstract class AbsResource implements SNetResource {
 	public static final int CREATED = 0;
 	public static final int INITIALIZED = 1;
 	public static final int DESTROYED = 2;
 	protected final SNetResourceManager manager;
 	protected final AtomicInteger sliceCount;
 	protected volatile int state = CREATED;
-	protected final int capacity;
+	protected final long capacity;
 
-	protected AbsSNetResource(SNetResourceManager manager, int capacity) {
+	protected AbsResource(SNetResourceManager manager, long capacity) {
 		this(manager, new AtomicInteger(0), capacity);
 	}
 
-	protected AbsSNetResource(SNetResourceManager manager, AtomicInteger sliceCount, int capacity) {
+	protected AbsResource(SNetResourceManager manager, AtomicInteger sliceCount, long capacity) {
 		this.manager = manager;
 		this.sliceCount = sliceCount;
 		this.capacity = capacity;
@@ -71,7 +71,7 @@ public abstract class AbsSNetResource implements SNetResource {
 	}
 
 	@Override
-	public int getCapacity() {
+	public long getCapacity() {
 		return capacity;
 	}
 
@@ -100,21 +100,26 @@ public abstract class AbsSNetResource implements SNetResource {
 		}
 	}
 
-	protected int enableLength(int off, int len) {
-		int remain = this.capacity - off;
+	protected long enableLength(long off, long len) {
+		long remain = this.capacity - off;
 		return remain < len ? remain : len;
 	}
 
+	protected int enableLength(long off, int len) {
+		long remain = this.capacity - off;
+		return remain < len ? (int) remain : len;
+	}
+
 	@Override
-	public int write(int off, SNetResource src, int srcOff, int srcLen) {
+	public long write(long off, SNetResource src, long srcOff, long srcLen) {
 		Object srcRaw = src.getRawObject();
 		if (srcRaw.getClass() == byte[].class) {
-			return write(off, (byte[]) srcRaw, srcOff, srcLen);
+			return write(off, (byte[]) srcRaw, (int) srcOff, (int) srcLen);
 		} else if (srcRaw.getClass() == ByteBuffer.class) {
 			ByteBuffer srcBuffer = (ByteBuffer) srcRaw;
-			srcBuffer.position(srcOff);
-			srcBuffer.limit(srcOff + srcLen);
-			return write(off, srcBuffer, srcLen);
+			srcBuffer.position((int) srcOff);
+			srcBuffer.limit((int) (srcOff + srcLen));
+			return write(off, srcBuffer, (int) srcLen);
 		} else {
 			return SNetBufferUtil.copy(src, srcOff, this, off, srcLen);
 		}

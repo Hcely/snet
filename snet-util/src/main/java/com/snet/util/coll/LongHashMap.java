@@ -79,8 +79,7 @@ public class LongHashMap<V> extends AbsHashMap<V> implements Iterable<LongEntry<
 				return node;
 		}
 		if (absentCreate) {
-			node = createNode(hash, key);
-			addNode(tables, idx, node);
+			addNode(tables, idx, node = createNode(hash, key));
 		}
 		return node;
 	}

@@ -1,9 +1,9 @@
 package com.snet.buffer;
 
-import com.snet.SNetReference;
+import com.snet.Referencable;
 import com.snet.io.BufferView;
 
-public interface SNetBuffer extends BufferView, SNetReference {
+public interface SNetBuffer extends BufferView, Referencable {
 	void ensureCapacity(int capacity);
 
 	int getWritePos();
@@ -29,5 +29,4 @@ public interface SNetBuffer extends BufferView, SNetReference {
 	int readBuf(SNetBuffer buf, int len);
 
 	SNetBuffer slice();
-
 }

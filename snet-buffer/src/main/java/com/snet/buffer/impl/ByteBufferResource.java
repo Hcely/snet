@@ -5,16 +5,16 @@ import com.snet.buffer.SNetResourceManager;
 
 import java.nio.ByteBuffer;
 
-public class SNetByteBufferResource extends AbsSNetResource {
+public class ByteBufferResource extends AbsResource {
 	protected final boolean direct;
 	protected ByteBuffer buffer;
 
-	public SNetByteBufferResource(SNetResourceManager manager, boolean direct, int capacity) {
+	public ByteBufferResource(SNetResourceManager manager, boolean direct, int capacity) {
 		super(manager, capacity);
 		this.direct = direct;
 	}
 
-	private SNetByteBufferResource(SNetByteBufferResource resource) {
+	private ByteBufferResource(ByteBufferResource resource) {
 		super(resource.manager, resource.sliceCount, resource.capacity);
 		this.state = INITIALIZED;
 		this.direct = resource.direct;
@@ -32,7 +32,7 @@ public class SNetByteBufferResource extends AbsSNetResource {
 
 	@Override
 	protected SNetResource slice0(int count) {
-		return new SNetByteBufferResource(this);
+		return new ByteBufferResource(this);
 	}
 
 	@Override
@@ -46,17 +46,17 @@ public class SNetByteBufferResource extends AbsSNetResource {
 	}
 
 	@Override
-	public int write(int off, byte[] src, int srcOff, int srcLen) {
+	public int write(long off, byte[] src, int srcOff, int srcLen) {
 		int len = enableLength(off, srcLen);
-		buffer.clear().position(off);
+		buffer.clear().position((int) off);
 		buffer.put(src, srcOff, len);
 		return len;
 	}
 
 	@Override
-	public int write(int off, ByteBuffer src, int srcLen) {
+	public int write(long off, ByteBuffer src, int srcLen) {
 		int len = enableLength(off, srcLen);
-		buffer.clear().position(off);
+		buffer.clear().position((int) off);
 		int srcLimit = src.limit();
 		src.limit(src.position() + len);
 		buffer.put(src);
@@ -65,17 +65,17 @@ public class SNetByteBufferResource extends AbsSNetResource {
 	}
 
 	@Override
-	public int read(int off, byte[] dst, int dstOff, int dstLen) {
+	public int read(long off, byte[] dst, int dstOff, int dstLen) {
 		int len = enableLength(off, dstLen);
-		buffer.clear().position(off);
+		buffer.clear().position((int) off);
 		buffer.get(dst, dstOff, len);
 		return len;
 	}
 
 	@Override
-	public int read(int off, ByteBuffer dst, int dstLen) {
+	public int read(long off, ByteBuffer dst, int dstLen) {
 		int len = enableLength(off, dstLen);
-		buffer.clear().position(off).limit(off + len);
+		buffer.clear().position((int) off).limit((int) (off + len));
 		dst.put(buffer);
 		return len;
 	}

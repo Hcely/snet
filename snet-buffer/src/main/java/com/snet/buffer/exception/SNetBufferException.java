@@ -6,4 +6,8 @@ public class SNetBufferException extends RuntimeException {
 	public SNetBufferException(String message) {
 		super(message);
 	}
+
+	public SNetBufferException(String message, Throwable cause) {
+		super(message, cause);
+	}
 }

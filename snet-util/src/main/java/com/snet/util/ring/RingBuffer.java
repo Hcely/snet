@@ -2,8 +2,8 @@ package com.snet.util.ring;
 
 import com.snet.IBuilder;
 import com.snet.Shutdownable;
-import com.snet.util.thread.DefThreadCtrl;
 import com.snet.util.MathUtil;
+import com.snet.util.thread.DefThreadCtrl;
 import com.snet.util.thread.ThreadCtrl;
 
 import java.util.concurrent.atomic.AtomicIntegerArray;

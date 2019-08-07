@@ -14,6 +14,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
     <modules>
+        <module>snet-common</module>
         <module>snet-util</module>
         <module>snet-core</module>
         <module>snet-buffer</module>
@@ -21,6 +22,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.snet</groupId>
+                <artifactId>snet-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.snet</groupId>
                 <artifactId>snet-util</artifactId>
@@ -38,6 +45,7 @@
                 <artifactId>snet-buffer</artifactId>
                 <version>${project.version}</version>
             </dependency>
+
         </dependencies>
     </dependencyManagement>
     <dependencies>
