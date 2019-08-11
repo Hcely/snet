@@ -1,5 +1,7 @@
 package com.snet.util.coll;
 
+import com.snet.IBuilder;
+
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Iterator;
@@ -11,6 +13,44 @@ import java.util.function.Function;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class BPTreeMap<K, V> implements MapPlus<K, V> {
+
+	public static class Builder<K, V> implements IBuilder<BPTreeMap<K, V>> {
+		protected int factor = DEF_FACTOR;
+		protected KeyComparator<K, ?> comparator;
+		protected KeyEqualFunc<K> equalFunc;
+
+		public int getFactor() {
+			return factor;
+		}
+
+		public Builder<K, V> setFactor(int factor) {
+			this.factor = factor;
+			return this;
+		}
+
+		public KeyComparator<K, ?> getComparator() {
+			return comparator;
+		}
+
+		public Builder<K, V> setComparator(KeyComparator<K, ?> comparator) {
+			this.comparator = comparator;
+			return this;
+		}
+
+		public KeyEqualFunc<K> getEqualFunc() {
+			return equalFunc;
+		}
+
+		public Builder<K, V> setEqualFunc(KeyEqualFunc<K> equalFunc) {
+			this.equalFunc = equalFunc;
+			return this;
+		}
+
+		@Override
+		public BPTreeMap<K, V> build() {
+			return new BPTreeMap<>(factor, comparator, equalFunc);
+		}
+	}
 
 	protected static class BPTNode<K> {
 		protected K key;
@@ -250,8 +290,8 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 		return Integer.compare(o1.hashCode(), o2.hashCode());
 	};
 	public static final int DEF_FACTOR = 4;
-	final KeyComparator<K, Object> comparator;
-	final KeyEqualFunc<K> equalFunc;
+	protected final KeyComparator<K, Object> comparator;
+	protected final KeyEqualFunc<K> equalFunc;
 	final int maxSize, threshold, minSize;
 	BlockNode<K> root;
 	LeafNode<K, V> head, tail;
@@ -279,7 +319,8 @@ public class BPTreeMap<K, V> implements MapPlus<K, V> {
 
 	public BPTreeMap(int factor, KeyComparator<K, ?> comparator, KeyEqualFunc<K> equalFunc) {
 		factor = factor > 2 ? factor : 2;
-		this.comparator = comparator == null ? (KeyComparator<K, Object>) DEF_COMPARATOR : (KeyComparator<K, Object>) comparator;
+		this.comparator =
+				comparator == null ? (KeyComparator<K, Object>) DEF_COMPARATOR : (KeyComparator<K, Object>) comparator;
 		this.equalFunc = equalFunc == null ? KeyEqualFunc.DEF_EQUAL : equalFunc;
 		this.minSize = factor;
 		this.threshold = (factor << 1) + 2;

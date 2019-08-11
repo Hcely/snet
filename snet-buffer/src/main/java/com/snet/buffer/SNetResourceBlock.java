@@ -1,6 +1,8 @@
 package com.snet.buffer;
 
-public interface SNetResourceBlock {
+import com.snet.SNetObject;
+
+public interface SNetResourceBlock extends SNetObject {
 
 	SNetResourceBlock getParent();
 
@@ -9,4 +11,5 @@ public interface SNetResourceBlock {
 	SNetResource getResource();
 
 	long getResourceOff();
+
 }

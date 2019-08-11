@@ -17,6 +17,22 @@ public class MathUtil {
 		return 31 - Integer.numberOfLeadingZeros(i);
 	}
 
+	public static long cell2(long i) {
+		return i < 1 ? 1 : 1 << cellLog2(i);
+	}
+
+	public static long cellLog2(long i) {
+		return 64 - Long.numberOfLeadingZeros(i - 1);
+	}
+
+	public static long floor2(long i) {
+		return i < 1 ? 1 : 1 << floorLog2(i);
+	}
+
+	public static long floorLog2(long i) {
+		return 63 - Long.numberOfLeadingZeros(i);
+	}
+
 	public static int floorFactor(int i, int factor) {
 		return (i / factor) * factor;
 	}

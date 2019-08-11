@@ -1,13 +1,13 @@
 package com.snet.buffer;
 
-import com.snet.Destroyable;
 import com.snet.Initializable;
 import com.snet.Releasable;
+import com.snet.SNetObject;
 import com.snet.Slicable;
 
 import java.nio.ByteBuffer;
 
-public interface SNetResource extends Initializable, Releasable, Destroyable, Slicable<SNetResource> {
+public interface SNetResource extends SNetObject, Initializable, Releasable, Slicable<SNetResource> {
 
 	SNetResourceManager getManager();
 

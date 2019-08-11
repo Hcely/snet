@@ -15,13 +15,18 @@ public class FixedResourceBlock extends DefResourceBlock implements SNetResource
 	protected int minIdx;
 	protected int remainCellSize;
 
+	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock target, int cellCapacity) {
+		this(allocator, target.getParent(), target.getResource(), target.getResourceOff(), target.getCapacity(),
+				cellCapacity);
+	}
+
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock parent, SNetResource resource,
 			long resourceOff, int capacity, int cellCapacity) {
-		super(parent, resource, resourceOff, capacity);
+		super(parent, resource, resourceOff, MathUtil.floor2(capacity));
 		this.allocator = allocator;
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.cellCapacity = 1 << cellCapacityShift;
-		this.cellSize = MathUtil.ceil2(capacity >>> cellCapacityShift);
+		this.cellSize = this.capacity >>> cellCapacityShift;
 		this.remainCellSize = cellSize;
 		this.freeBitmap = new Bitmap(cellSize);
 		this.minIdx = 0;
@@ -47,7 +52,7 @@ public class FixedResourceBlock extends DefResourceBlock implements SNetResource
 			int i = 0, idx = minIdx & mark;
 			for (; i < len; ++i, idx = (idx + 1) & mark) {
 				if (!freeBitmap.getSet(idx, true)) {
-					long cellOffset = getOffset(idx);
+					long cellOffset = getChildResourceOff(idx);
 					--remainCellSize;
 					setMinIdx((idx + 1) & mark);
 					SNetResource resource = this.resource.slice();
@@ -60,16 +65,16 @@ public class FixedResourceBlock extends DefResourceBlock implements SNetResource
 
 	@Override
 	public void recycle(SNetResourceBlock block) {
-		final int idx = getIdx(block.getResourceOff());
-		if (freeBitmap.getSet(idx, false)) {
+		if (block.isDestroyed() && block.getParent() == this) {
+			final int idx = getIdx(block.getResourceOff());
+			freeBitmap.set(idx, false);
 			setMinIdx(idx);
-			--remainCellSize;
-			block.getResource().release();
+			++remainCellSize;
+			block.destroy();
 		}
 	}
 
-
-	protected long getOffset(int idx) {
+	protected long getChildResourceOff(int idx) {
 		return resourceOff + idx << cellCapacityShift;
 	}
 

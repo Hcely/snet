@@ -66,6 +66,11 @@ public abstract class AbsResource implements SNetResource {
 	}
 
 	@Override
+	public boolean isDestroyed() {
+		return state != DESTROYED;
+	}
+
+	@Override
 	public SNetResourceManager getManager() {
 		return manager;
 	}
