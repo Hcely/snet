@@ -1,44 +1,41 @@
 package com.snet.buffer.impl;
 
+import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResource;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.MathUtil;
 import com.snet.util.coll.BPTreeMap;
 
-public class BigResourceBlock extends DefResourceBlock implements SNetResourceBlockAllocator {
+public class DefAllocatableResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
 	protected final SNetResourceBlockAllocator allocator;
-	protected final long capacityL;
 	protected final int cellCapacityShift;
 	protected final int cellCapacity;
 	protected final BPTreeMap<OffsetBlock, Void> blocks;
 	protected final BPTreeMap<OffsetBlock, Void> sortBlocks;
-	protected long remainCapacity;
+	protected int remainCapacity;
 
-	public BigResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int cellCapacity) {
-		this(allocator, resource, MathUtil.floor2(resource.getCapacity()), cellCapacity);
+	public DefAllocatableResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int cellCapacity) {
+		this(allocator, resource, (int) MathUtil.floor2(resource.getCapacity()), cellCapacity);
 	}
 
-	private BigResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, long capacityL,
+	private DefAllocatableResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int capacity,
 			int cellCapacity) {
-		super(null, resource, 0, (int) capacityL);
+		super(null, resource, 0, capacity);
 		this.allocator = allocator;
-		this.capacityL = capacityL;
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.cellCapacity = 1 << cellCapacityShift;
 		this.blocks = new BPTreeMap<>(OFFSET_COMPARATOR);
 		this.sortBlocks = new BPTreeMap<>(SORT_COMPARATOR);
-		this.remainCapacity = capacityL;
-		OffsetBlock block = new OffsetBlock(0, capacityL);
+		this.remainCapacity = capacity;
+		OffsetBlock block = new OffsetBlock(0, capacity);
 		blocks.put(block, null);
 		sortBlocks.put(block, null);
 	}
 
-	public long getCapacityL() {
-		return capacityL;
-	}
 
-	public long getRemainCapacity() {
+	@Override
+	public int getRemainCapacity() {
 		return remainCapacity;
 	}
 
@@ -126,6 +123,7 @@ public class BigResourceBlock extends DefResourceBlock implements SNetResourceBl
 			return Long.compare(key.offset, ((OffsetBlock) keyObj).offset);
 		}
 	};
+
 
 	protected static class OffsetBlock {
 		protected final long offset;

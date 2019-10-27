@@ -1,26 +1,23 @@
 package com.snet.buffer.impl;
 
-import com.snet.buffer.SNetResource;
+import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.MathUtil;
 
-public class TreeResourceBlock extends DefResourceBlock implements SNetResourceBlockAllocator {
+public class TreeResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
 	protected final SNetResourceBlockAllocator allocator;
+	protected final SNetResourceBlock rawBlock;
 	protected final int cellCapacityShift;
 	protected final int levelNum;
 	protected final byte[] tree;
 	protected int remainCapacity;
 
-	public TreeResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock target, int cellCapacity) {
-		this(allocator, target.getParent(), target.getResource(), target.getResourceOff(), target.getCapacity(),
-				cellCapacity);
-	}
-
-	public TreeResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock parent, SNetResource resource,
-			long resourceOff, int capacity, int cellCapacity) {
-		super(parent, resource, resourceOff, MathUtil.floor2(capacity));
+	public TreeResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
+		super(rawBlock.getParent(), rawBlock.getResource(), rawBlock.getCapacity(),
+				MathUtil.floor2(rawBlock.getCapacity()));
 		this.allocator = allocator;
+		this.rawBlock = rawBlock;
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.levelNum = MathUtil.floorLog2(capacity) + 1 - cellCapacityShift;
 		this.remainCapacity = this.capacity;
@@ -32,6 +29,10 @@ public class TreeResourceBlock extends DefResourceBlock implements SNetResourceB
 		}
 	}
 
+	public SNetResourceBlock getRawBlock() {
+		return rawBlock;
+	}
+
 	@Override
 	public SNetResourceBlock allocate(int capacity) {
 		int level = getLevel(capacity);
@@ -41,6 +42,7 @@ public class TreeResourceBlock extends DefResourceBlock implements SNetResourceB
 		}
 		long offset = getChildResourceOff(idx, level);
 		capacity = getChildCapacity(level);
+		remainCapacity -= capacity;
 		return new DefResourceBlock(this, resource.slice(), offset, capacity);
 	}
 
@@ -50,8 +52,14 @@ public class TreeResourceBlock extends DefResourceBlock implements SNetResourceB
 			final int level = getLevel(block.getCapacity());
 			final int idx = getTreeIdx(block.getResourceOff(), level);
 			recycleTree(idx, level);
+			remainCapacity += block.getCapacity();
 			block.destroy();
 		}
+	}
+
+	@Override
+	public int getRemainCapacity() {
+		return remainCapacity;
 	}
 
 	protected int allocateTree(int level) {

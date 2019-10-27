@@ -11,5 +11,4 @@ public interface SNetResourceBlock extends SNetObject {
 	SNetResource getResource();
 
 	long getResourceOff();
-
 }

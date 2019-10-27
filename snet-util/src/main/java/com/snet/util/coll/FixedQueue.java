@@ -22,8 +22,7 @@ public class FixedQueue<E> {
 	}
 
 	public boolean add(E e) {
-		if (e == null)
-			throw new NullPointerException("element is null");
+		if (e == null) { throw new NullPointerException("element is null"); }
 		AtomicReferenceArray<E> array = this.array;
 		AtomicLong read = this.read, write = this.write;
 		int mask = this.mask, idx, capacity = this.capacity;
