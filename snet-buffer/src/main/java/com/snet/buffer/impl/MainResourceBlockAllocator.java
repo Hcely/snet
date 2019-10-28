@@ -10,26 +10,21 @@ public class MainResourceBlockAllocator implements SNetResourceBlockAllocator {
 	protected final CoreResourceBlockAllocator parentAllocator;
 	protected final ConcurrentLinkedQueue<TreeResourceBlock> freeBlocks;
 	protected final SNetBlockSet<TreeResourceBlock>[] blockSets;
-	protected final SNetBlockSet<TreeResourceBlock> header;
+	protected final SNetBlockSet<TreeResourceBlock>[] allocateBlockSets;
 
 	@SuppressWarnings("unchecked")
 	public MainResourceBlockAllocator(CoreResourceBlockAllocator parentAllocator) {
 		this.parentAllocator = parentAllocator;
 		this.freeBlocks = new ConcurrentLinkedQueue<>();
-		this.blockSets = new SNetBlockSet[10];
-		for (int i = 0; i < 10; ++i) {
-			blockSets[i] = new SNetBlockSet<>(i);
-		}
-		blockSets[0].setNext(blockSets[1]);
-		blockSets[5].setNext(blockSets[1]);
-		blockSets[1].setNext(blockSets[2]);
-		blockSets[2].setNext(blockSets[3]);
-		blockSets[3].setNext(blockSets[4]);
-		blockSets[4].setNext(blockSets[6]);
-		blockSets[6].setNext(blockSets[7]);
-		blockSets[7].setNext(blockSets[8]);
-		blockSets[8].setNext(blockSets[9]);
-		this.header = blockSets[5];
+		this.blockSets = new SNetBlockSet[5];
+		this.allocateBlockSets = new SNetBlockSet[5];
+		blockSets[0] = new SNetBlockSet<>(0, 2);
+		blockSets[1] = new SNetBlockSet<>(3, 5);
+		blockSets[2] = new SNetBlockSet<>(6, 11);
+		blockSets[3] = new SNetBlockSet<>(12, 14);
+		blockSets[4] = new SNetBlockSet<>(14, 16);
+		
+
 	}
 
 	@Override

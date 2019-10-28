@@ -5,26 +5,22 @@ import com.snet.buffer.SNetAllocatableResourceBlock;
 import java.util.LinkedList;
 
 public class SNetBlockSet<T extends SNetAllocatableResourceBlock> {
-	protected SNetBlockSet<T> next;
-	protected final int threshold;
+	protected final int minThreshold;
+	protected final int maxThreshold;
 	protected final LinkedList<T> blocks;
 
-	public SNetBlockSet(int threshold) {
-		this.threshold = threshold;
+	public SNetBlockSet(int minThreshold, int maxThreshold) {
+		this.minThreshold = minThreshold;
+		this.maxThreshold = maxThreshold;
 		this.blocks = new LinkedList<>();
 	}
 
-	public SNetBlockSet<T> getNext() {
-		return next;
+	public int getMinThreshold() {
+		return minThreshold;
 	}
 
-	public SNetBlockSet<T> setNext(SNetBlockSet<T> next) {
-		this.next = next;
-		return this;
-	}
-
-	public int getThreshold() {
-		return threshold;
+	public int getMaxThreshold() {
+		return maxThreshold;
 	}
 
 	public LinkedList<T> getBlocks() {
