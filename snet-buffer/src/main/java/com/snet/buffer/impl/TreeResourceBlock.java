@@ -5,7 +5,7 @@ import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.MathUtil;
 
-public class TreeResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
+class TreeResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final SNetResourceBlock rawBlock;
 	protected final int cellCapacityShift;
@@ -118,4 +118,6 @@ public class TreeResourceBlock extends DefResourceBlock implements SNetAllocatab
 	protected static byte min(byte a, byte b) {
 		return a < b ? a : b;
 	}
+
+
 }

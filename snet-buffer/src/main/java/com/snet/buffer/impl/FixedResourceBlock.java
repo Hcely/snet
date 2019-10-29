@@ -4,10 +4,11 @@ import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResource;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
+import com.snet.buffer.util.SNetBlockSet;
 import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
-public class FixedResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
+class FixedResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final SNetResourceBlock rawBlock;
 	protected final int cellCapacity;
@@ -16,6 +17,8 @@ public class FixedResourceBlock extends DefResourceBlock implements SNetAllocata
 	protected final Bitmap freeBitmap;
 	protected int minIdx;
 	protected int remainCapacity;
+	protected SNetBlockSet<FixedResourceBlock> blockSet;
+
 
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
 		super(rawBlock.getParent(), rawBlock.getResource(), rawBlock.getResourceOff(),
@@ -88,4 +91,5 @@ public class FixedResourceBlock extends DefResourceBlock implements SNetAllocata
 		int startIdx = this.minIdx;
 		this.minIdx = idx < startIdx ? idx : startIdx;
 	}
+
 }
