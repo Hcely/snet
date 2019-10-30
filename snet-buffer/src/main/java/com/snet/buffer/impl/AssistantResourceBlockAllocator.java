@@ -2,13 +2,12 @@ package com.snet.buffer.impl;
 
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
-import com.snet.buffer.util.SNetBlockSet;
 import com.snet.util.coll.FixedQueue;
 
 public class AssistantResourceBlockAllocator implements SNetResourceBlockAllocator {
 	protected MainResourceBlockAllocator parentAllocator;
-	protected SNetBlockSet<FixedResourceBlock> header;
-	protected SNetBlockSet<FixedResourceBlock>[] blockSets;
+	protected BlockList<FixedResourceBlock> header;
+	protected BlockList<FixedResourceBlock>[] blockSets;
 	protected FixedQueue<SNetResourceBlock>[] caches;
 
 

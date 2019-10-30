@@ -4,7 +4,6 @@ import com.snet.ResourceManager;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.buffer.SNetResourceManager;
-import com.snet.buffer.util.SNetBlockSet;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -12,8 +11,8 @@ public class CoreResourceBlockAllocator implements SNetResourceBlockAllocator, R
 	protected long blockCapacity;
 	protected SNetResourceManager resourceManager;
 	protected ConcurrentLinkedQueue<DefAllocatableResourceBlock> freeBlocks;
-	protected SNetBlockSet<DefAllocatableResourceBlock> header;
-	protected SNetBlockSet<DefAllocatableResourceBlock>[] blockSets;
+	protected BlockList<DefAllocatableResourceBlock> header;
+	protected BlockList<DefAllocatableResourceBlock>[] blockSets;
 
 	@Override
 	public SNetResourceBlock allocate(int capacity) {

@@ -4,7 +4,6 @@ import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResource;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
-import com.snet.buffer.util.SNetBlockSet;
 import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
@@ -17,7 +16,7 @@ class FixedResourceBlock extends DefResourceBlock implements SNetAllocatableReso
 	protected final Bitmap freeBitmap;
 	protected int minIdx;
 	protected int remainCapacity;
-	protected SNetBlockSet<FixedResourceBlock> blockSet;
+	protected BlockList<FixedResourceBlock> blockSet;
 
 
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {

@@ -12,6 +12,7 @@ class TreeResourceBlock extends DefResourceBlock implements SNetAllocatableResou
 	protected final int levelNum;
 	protected final byte[] tree;
 	protected int remainCapacity;
+	protected TreeResourceBlock prev, next;
 
 	public TreeResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
 		super(rawBlock.getParent(), rawBlock.getResource(), rawBlock.getCapacity(),
