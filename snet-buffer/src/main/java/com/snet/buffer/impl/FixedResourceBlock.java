@@ -1,13 +1,12 @@
 package com.snet.buffer.impl;
 
-import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResource;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
-class FixedResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
+class FixedResourceBlock extends LinkedBlock<FixedResourceBlock> {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final SNetResourceBlock rawBlock;
 	protected final int cellCapacity;
@@ -16,8 +15,6 @@ class FixedResourceBlock extends DefResourceBlock implements SNetAllocatableReso
 	protected final Bitmap freeBitmap;
 	protected int minIdx;
 	protected int remainCapacity;
-	protected BlockList<FixedResourceBlock> blockSet;
-
 
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
 		super(rawBlock.getParent(), rawBlock.getResource(), rawBlock.getResourceOff(),
@@ -69,7 +66,7 @@ class FixedResourceBlock extends DefResourceBlock implements SNetAllocatableReso
 
 	@Override
 	public void recycle(SNetResourceBlock block) {
-		if (block.isDestroyed() && block.getParent() == this) {
+		if (!block.isDestroyed() && block.getParent() == this) {
 			final int idx = getIdx(block.getResourceOff());
 			freeBitmap.set(idx, false);
 			setMinIdx(idx);

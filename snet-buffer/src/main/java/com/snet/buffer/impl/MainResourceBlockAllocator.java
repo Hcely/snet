@@ -30,6 +30,20 @@ public class MainResourceBlockAllocator implements SNetResourceBlockAllocator {
 
 	@Override
 	public synchronized SNetResourceBlock allocate(int capacity) {
+		for (BlockList<TreeResourceBlock> list : allocateBlockSets) {
+
+		}
+		return null;
+	}
+
+	private SNetResourceBlock allocate(BlockList<TreeResourceBlock> list, int capacity) {
+		TreeResourceBlock node = list.getHeader();
+		for (; node != null; node = node.getNext()) {
+			SNetResourceBlock block = node.allocate(capacity);
+			if (block != null) {
+
+			}
+		}
 		return null;
 	}
 

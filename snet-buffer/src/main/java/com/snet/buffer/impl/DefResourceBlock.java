@@ -31,7 +31,7 @@ public class DefResourceBlock implements SNetResourceBlock {
 
 	@Override
 	public boolean isDestroyed() {
-		return !destroyed;
+		return destroyed;
 	}
 
 	@Override

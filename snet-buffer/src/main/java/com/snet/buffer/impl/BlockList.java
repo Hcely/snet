@@ -1,18 +1,14 @@
 package com.snet.buffer.impl;
 
-import com.snet.buffer.SNetAllocatableResourceBlock;
-
-import java.util.LinkedList;
-
-public class BlockList<T extends SNetAllocatableResourceBlock> {
+public class BlockList<T extends LinkedBlock<T>> {
 	protected final int minThreshold;
 	protected final int maxThreshold;
-	protected final LinkedList<T> blocks;
+	protected T header;
 
 	public BlockList(int minThreshold, int maxThreshold) {
 		this.minThreshold = minThreshold;
 		this.maxThreshold = maxThreshold;
-		this.blocks = new LinkedList<>();
+		this.header = null;
 	}
 
 	public int getMinThreshold() {
@@ -23,7 +19,11 @@ public class BlockList<T extends SNetAllocatableResourceBlock> {
 		return maxThreshold;
 	}
 
-	public LinkedList<T> getBlocks() {
-		return blocks;
+	public T getHeader() {
+		return header;
+	}
+
+	public void addBlock() {
+
 	}
 }

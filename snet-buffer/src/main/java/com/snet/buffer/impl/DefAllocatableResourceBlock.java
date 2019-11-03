@@ -66,7 +66,7 @@ public class DefAllocatableResourceBlock extends DefResourceBlock implements SNe
 
 	@Override
 	public void recycle(SNetResourceBlock block) {
-		if (block.isDestroyed() && block.getParent() == this) {
+		if (!block.isDestroyed() && block.getParent() == this) {
 			combineBlock(block);
 			remainCapacity += block.getCapacity();
 			block.destroy();

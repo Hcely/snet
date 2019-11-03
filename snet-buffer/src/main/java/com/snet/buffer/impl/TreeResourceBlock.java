@@ -1,18 +1,16 @@
 package com.snet.buffer.impl;
 
-import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.MathUtil;
 
-class TreeResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
+class TreeResourceBlock extends LinkedBlock<TreeResourceBlock> {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final SNetResourceBlock rawBlock;
 	protected final int cellCapacityShift;
 	protected final int levelNum;
 	protected final byte[] tree;
 	protected int remainCapacity;
-	protected TreeResourceBlock prev, next;
 
 	public TreeResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
 		super(rawBlock.getParent(), rawBlock.getResource(), rawBlock.getCapacity(),
@@ -49,7 +47,7 @@ class TreeResourceBlock extends DefResourceBlock implements SNetAllocatableResou
 
 	@Override
 	public void recycle(SNetResourceBlock block) {
-		if (block.isDestroyed() && block.getParent() == this) {
+		if (!block.isDestroyed() && block.getParent() == this) {
 			final int level = getLevel(block.getCapacity());
 			final int idx = getTreeIdx(block.getResourceOff(), level);
 			recycleTree(idx, level);
