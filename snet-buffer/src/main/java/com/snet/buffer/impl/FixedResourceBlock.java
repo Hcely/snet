@@ -8,31 +8,18 @@ import com.snet.util.MathUtil;
 
 class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 	protected final SNetResourceBlockAllocator allocator;
-	protected final SNetResourceBlock rawBlock;
-	protected final int cellCapacity;
 	protected final int cellSize;
 	protected final int cellCapacityShift;
 	protected final Bitmap freeBitmap;
 	protected int minIdx;
 
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
-		super(rawBlock.getParent(), rawBlock.getResource(), rawBlock.getResourceOff(),
-				MathUtil.floor2(rawBlock.getCapacity()));
-		this.rawBlock = rawBlock;
+		super(rawBlock.getParent(), rawBlock, cellCapacity);
 		this.allocator = allocator;
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
-		this.cellCapacity = 1 << cellCapacityShift;
 		this.cellSize = this.capacity >>> cellCapacityShift;
 		this.freeBitmap = new Bitmap(cellSize);
 		this.minIdx = 0;
-	}
-
-	public SNetResourceBlock getRawBlock() {
-		return rawBlock;
-	}
-
-	public int getCellCapacity() {
-		return cellCapacity;
 	}
 
 	public int getCellSize() {

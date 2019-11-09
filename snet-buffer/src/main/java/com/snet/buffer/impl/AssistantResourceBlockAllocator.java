@@ -6,8 +6,7 @@ import com.snet.util.coll.FixedQueue;
 
 public class AssistantResourceBlockAllocator implements SNetResourceBlockAllocator {
 	protected MainResourceBlockAllocator parentAllocator;
-	protected BlockList<FixedResourceBlock> header;
-	protected BlockList<FixedResourceBlock>[] blockSets;
+	protected BlockList<FixedResourceBlock>[] blockList;
 	protected FixedQueue<SNetResourceBlock>[] caches;
 
 
