@@ -6,7 +6,7 @@ import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
-class FixedResourceBlock extends LinkedBlock<FixedResourceBlock> {
+class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final SNetResourceBlock rawBlock;
 	protected final int cellCapacity;
@@ -14,7 +14,6 @@ class FixedResourceBlock extends LinkedBlock<FixedResourceBlock> {
 	protected final int cellCapacityShift;
 	protected final Bitmap freeBitmap;
 	protected int minIdx;
-	protected int remainCapacity;
 
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
 		super(rawBlock.getParent(), rawBlock.getResource(), rawBlock.getResourceOff(),
@@ -24,7 +23,6 @@ class FixedResourceBlock extends LinkedBlock<FixedResourceBlock> {
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.cellCapacity = 1 << cellCapacityShift;
 		this.cellSize = this.capacity >>> cellCapacityShift;
-		this.remainCapacity = this.capacity;
 		this.freeBitmap = new Bitmap(cellSize);
 		this.minIdx = 0;
 	}
@@ -39,10 +37,6 @@ class FixedResourceBlock extends LinkedBlock<FixedResourceBlock> {
 
 	public int getCellSize() {
 		return cellSize;
-	}
-
-	public int getRemainCapacity() {
-		return remainCapacity;
 	}
 
 	@Override
