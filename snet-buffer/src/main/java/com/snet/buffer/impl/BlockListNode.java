@@ -73,6 +73,7 @@ abstract class BlockListNode<T extends BlockListNode<T>> extends DefResourceBloc
 			if (next != null) {
 				next.prev = prev;
 			}
+			list = null;
 		}
 	}
 

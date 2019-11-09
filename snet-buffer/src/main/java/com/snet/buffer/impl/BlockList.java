@@ -78,13 +78,15 @@ class BlockList<T extends BlockListNode<T>> {
 			prev.addBlock(percent, block);
 			return;
 		}
-		block.remove();
-		block.setList(this);
-		block.setNext(header);
-		if (header != null) {
-			header.setPrev(block);
+		if (block.list != this) {
+			block.remove();
+			block.setList(this);
+			block.setNext(header);
+			if (header != null) {
+				header.setPrev(block);
+			}
+			header = block;
 		}
-		header = block;
 	}
 
 	public SNetResourceBlock allocate(int capacity) {
