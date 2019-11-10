@@ -2,7 +2,7 @@ package com.snet.buffer.impl;
 
 import com.snet.buffer.SNetResourceBlock;
 
-class BlockList<T extends BlockListNode<T>> {
+public class BlockList<T extends BlockListNode<T>> {
 	protected BlockList<T> prev;
 	protected BlockList<T> next;
 	protected final int minThreshold;
