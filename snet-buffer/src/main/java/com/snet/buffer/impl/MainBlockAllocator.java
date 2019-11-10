@@ -10,7 +10,7 @@ public class MainBlockAllocator implements SNetResourceBlockAllocator {
 	public static final int CELL_CAPACITY = 1 << 13;
 
 	@SuppressWarnings("unchecked")
-	private static BlockList<TreeResourceBlock>[] newBlockList() {
+	private static BlockList<TreeResourceBlock>[] newBlockLists() {
 		BlockList<TreeResourceBlock> percent0 = new BlockList<>(0, 0);
 		BlockList<TreeResourceBlock> percent1_10 = new BlockList<>(percent0, 10);
 		BlockList<TreeResourceBlock> percent11_20 = new BlockList<>(percent1_10, 20);
@@ -30,7 +30,7 @@ public class MainBlockAllocator implements SNetResourceBlockAllocator {
 	public MainBlockAllocator(CoreBlockAllocator parentAllocator) {
 		this.parentAllocator = parentAllocator;
 		this.freeBlocks = new FixedQueue<>(32);
-		this.blockLists = newBlockList();
+		this.blockLists = newBlockLists();
 	}
 
 	@Override
