@@ -1,19 +1,16 @@
 package com.snet.buffer.impl;
 
-import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResource;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.MathUtil;
 import com.snet.util.coll.BPTreeMap;
 
-public class DefAllocatableResourceBlock extends DefResourceBlock implements SNetAllocatableResourceBlock {
+public class DefAllocatableResourceBlock extends BlockListNode<DefAllocatableResourceBlock> {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final int cellCapacityShift;
-	protected final int cellCapacity;
 	protected final BPTreeMap<OffsetBlock, Void> blocks;
 	protected final BPTreeMap<OffsetBlock, Void> sortBlocks;
-	protected int remainCapacity;
 
 	public DefAllocatableResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int cellCapacity) {
 		this(allocator, resource, (int) MathUtil.floor2(resource.getCapacity()), cellCapacity);
@@ -21,26 +18,14 @@ public class DefAllocatableResourceBlock extends DefResourceBlock implements SNe
 
 	private DefAllocatableResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int capacity,
 			int cellCapacity) {
-		super(null, resource, 0, capacity);
+		super(resource, 0, capacity, cellCapacity);
 		this.allocator = allocator;
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
-		this.cellCapacity = 1 << cellCapacityShift;
 		this.blocks = new BPTreeMap<>(OFFSET_COMPARATOR);
 		this.sortBlocks = new BPTreeMap<>(SORT_COMPARATOR);
-		this.remainCapacity = capacity;
 		OffsetBlock block = new OffsetBlock(0, capacity);
 		blocks.put(block, null);
 		sortBlocks.put(block, null);
-	}
-
-
-	@Override
-	public int getRemainCapacity() {
-		return remainCapacity;
-	}
-
-	public int getCellCapacity() {
-		return cellCapacity;
 	}
 
 	@Override

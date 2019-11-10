@@ -3,20 +3,6 @@ package com.snet.buffer.impl;
 import com.snet.buffer.SNetResourceBlock;
 
 class BlockList<T extends BlockListNode<T>> {
-	@SuppressWarnings("unchecked")
-	public static <T extends BlockListNode<T>> BlockList<T>[] newBlockList() {
-		BlockList<T> percent0 = new BlockList<>(0, 0);
-		BlockList<T> percent1_10 = new BlockList<>(percent0, 10);
-		BlockList<T> percent11_20 = new BlockList<>(percent1_10, 20);
-		BlockList<T> percent21_40 = new BlockList<>(percent11_20, 40);
-		BlockList<T> percent41_60 = new BlockList<>(percent21_40, 60);
-		BlockList<T> percent61_80 = new BlockList<>(percent41_60, 80);
-		BlockList<T> percent81_90 = new BlockList<>(percent61_80, 90);
-		BlockList<T> percent91_100 = new BlockList<>(percent81_90, 100);
-		return new BlockList[]{percent41_60, percent1_10, percent11_20, percent21_40, percent61_80, percent81_90,
-				percent91_100};
-	}
-
 	protected BlockList<T> prev;
 	protected BlockList<T> next;
 	protected final int minThreshold;
