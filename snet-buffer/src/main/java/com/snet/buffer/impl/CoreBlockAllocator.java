@@ -11,9 +11,9 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 	public static final int MAX_FREE_BLOCK = 64;
 
 	@SuppressWarnings("unchecked")
-	private static BlockList<DefAllocatableResourceBlock>[] newBlockLists() {
-		BlockList<DefAllocatableResourceBlock> prev = new BlockList<>(0, 0);
-		BlockList<DefAllocatableResourceBlock>[] result = new BlockList[10];
+	private static BlockList<DefAllocatableBlock>[] newBlockLists() {
+		BlockList<DefAllocatableBlock> prev = new BlockList<>(0, 0);
+		BlockList<DefAllocatableBlock>[] result = new BlockList[10];
 		for (int i = 0; i < 10; ++i) {
 			result[i] = new BlockList<>(prev, (i + 1) * 10);
 			prev = result[i];
@@ -22,8 +22,8 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 	}
 
 	protected final SNetResourceManager resourceManager;
-	protected final FixedQueue<DefAllocatableResourceBlock> freeBlocks;
-	protected final BlockList<DefAllocatableResourceBlock>[] blockLists;
+	protected final FixedQueue<DefAllocatableBlock> freeBlocks;
+	protected final BlockList<DefAllocatableBlock>[] blockLists;
 
 	public CoreBlockAllocator(SNetResourceManager resourceManager) {
 		this.resourceManager = resourceManager;
