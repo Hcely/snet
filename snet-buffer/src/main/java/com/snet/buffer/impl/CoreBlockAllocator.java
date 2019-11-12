@@ -7,13 +7,14 @@ import com.snet.buffer.SNetResourceManager;
 import com.snet.util.coll.FixedQueue;
 
 public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceManager {
-	public static final long BLOCK_CAPACITY = 1 << 23;
-	public static final int MAX_FREE_BLOCK = 64;
+	public static final long BLOCK_CAPACITY = 1 << 24;
+	public static final long MAX_ALLOCATE_CAPACITY = 1 << 22;
+	public static final int MAX_FREE_BLOCK = 1 << 8;
 
 	@SuppressWarnings("unchecked")
-	private static BlockList<DefAllocatableBlock>[] newBlockLists() {
-		BlockList<DefAllocatableBlock> prev = new BlockList<>(0, 0);
-		BlockList<DefAllocatableBlock>[] result = new BlockList[10];
+	private static BlockList<BitmapBlock>[] newBlockLists() {
+		BlockList<BitmapBlock> prev = new BlockList<>(0, 0);
+		BlockList<BitmapBlock>[] result = new BlockList[10];
 		for (int i = 0; i < 10; ++i) {
 			result[i] = new BlockList<>(prev, (i + 1) * 10);
 			prev = result[i];
@@ -22,8 +23,8 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 	}
 
 	protected final SNetResourceManager resourceManager;
-	protected final FixedQueue<DefAllocatableBlock> freeBlocks;
-	protected final BlockList<DefAllocatableBlock>[] blockLists;
+	protected final FixedQueue<BitmapBlock> freeBlocks;
+	protected final BlockList<BitmapBlock>[] blockLists;
 
 	public CoreBlockAllocator(SNetResourceManager resourceManager) {
 		this.resourceManager = resourceManager;
@@ -31,10 +32,11 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 		this.blockLists = newBlockLists();
 	}
 
-
 	@Override
 	public SNetResourceBlock allocate(int capacity) {
+		if (capacity > MAX_ALLOCATE_CAPACITY) {
 
+		}
 
 		return null;
 	}
