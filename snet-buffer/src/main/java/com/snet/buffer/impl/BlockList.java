@@ -3,6 +3,17 @@ package com.snet.buffer.impl;
 import com.snet.buffer.SNetResourceBlock;
 
 public class BlockList<T extends BlockListNode<T>> {
+	public static SNetResourceBlock allocate(BlockList<?>[] blockLists, int capacity) {
+		for (BlockList<?> list : blockLists) {
+			SNetResourceBlock block = list.allocate(capacity);
+			if (block != null) {
+				return block;
+			}
+		}
+		return null;
+	}
+
+
 	protected BlockList<T> prev;
 	protected BlockList<T> next;
 	protected final int minThreshold;
@@ -64,20 +75,18 @@ public class BlockList<T extends BlockListNode<T>> {
 			prev.addBlock(percent, block);
 			return;
 		}
-		if (block.list != this) {
-			block.remove();
-			block.setList(this);
-			block.setNext(header);
-			if (header != null) {
-				header.setPrev(block);
-			}
-			header = block;
+		block.remove();
+		block.list = this;
+		block.next = header;
+		if (header != null) {
+			header.prev = block;
 		}
+		header = block;
 	}
 
 	public SNetResourceBlock allocate(int capacity) {
 		T node = header;
-		for (; node != null; node = node.getNext()) {
+		for (; node != null; node = node.next) {
 			SNetResourceBlock block = node.allocate(capacity);
 			if (block != null) {
 				addBlock(node);

@@ -43,15 +43,12 @@ public class MainBlockAllocator implements SNetResourceBlockAllocator {
 	}
 
 	private synchronized SNetResourceBlock allocate0(int capacity) {
-		for (BlockList<TreeResourceBlock> list : blockLists) {
-			SNetResourceBlock block = list.allocate(capacity);
-			if (block != null) {
-				return block;
-			}
+		SNetResourceBlock block = BlockList.allocate(blockLists, capacity);
+		if (block == null) {
+			TreeResourceBlock treeBlock = allocateTreeBlock();
+			block = treeBlock.allocate(capacity);
+			blockLists[blockLists.length - 1].addBlock(treeBlock);
 		}
-		TreeResourceBlock treeBlock = allocateTreeBlock();
-		SNetResourceBlock block = treeBlock.allocate(capacity);
-		blockLists[blockLists.length - 1].addBlock(treeBlock);
 		return block;
 	}
 

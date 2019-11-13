@@ -7,9 +7,9 @@ import com.snet.buffer.SNetResourceBlock;
 abstract class BlockListNode<T extends BlockListNode<T>> extends DefResourceBlock
 		implements SNetAllocatableResourceBlock {
 	protected final SNetResourceBlock rawBlock;
-	protected T prev;
-	protected T next;
-	protected BlockList<T> list;
+	T prev;
+	T next;
+	BlockList<T> list;
 	protected int remainCapacity;
 	protected final int hundredthCapacity;
 	protected final int cellCapacity;
@@ -53,25 +53,6 @@ abstract class BlockListNode<T extends BlockListNode<T>> extends DefResourceBloc
 		return remainCapacity;
 	}
 
-	void setPrev(T prev) {
-		this.prev = prev;
-	}
-
-	void setNext(T next) {
-		this.next = next;
-	}
-
-	void setList(BlockList<T> list) {
-		this.list = list;
-	}
-
-	T getPrev() {
-		return prev;
-	}
-
-	T getNext() {
-		return next;
-	}
 
 	void remove() {
 		if (list != null) {
@@ -83,6 +64,8 @@ abstract class BlockListNode<T extends BlockListNode<T>> extends DefResourceBloc
 			if (next != null) {
 				next.prev = prev;
 			}
+			prev = null;
+			next = null;
 			list = null;
 		}
 	}
