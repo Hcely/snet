@@ -18,7 +18,7 @@ public abstract class AbsResource implements SNetResource {
 	protected final long capacity;
 
 	protected AbsResource(SNetResourceManager manager, long capacity) {
-		this(manager, new AtomicInteger(0), capacity);
+		this(manager, new AtomicInteger(1), capacity);
 	}
 
 	protected AbsResource(SNetResourceManager manager, AtomicInteger sliceCount, long capacity) {
