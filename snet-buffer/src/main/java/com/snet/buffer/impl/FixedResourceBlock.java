@@ -14,7 +14,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 	protected int minIdx;
 
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
-		super(rawBlock.getParent(), rawBlock, cellCapacity);
+		super(allocator, rawBlock, cellCapacity);
 		this.allocator = allocator;
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.cellSize = this.capacity >>> cellCapacityShift;
@@ -38,7 +38,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 					remainCapacity -= cellCapacity;
 					setMinIdx((idx + 1) & mark);
 					SNetResource resource = this.resource.slice();
-					return new DefResourceBlock(this, resource, cellOffset, cellCapacity);
+					return new DefResourceBlock(allocator, this, resource, cellOffset, cellCapacity);
 				}
 			}
 		}

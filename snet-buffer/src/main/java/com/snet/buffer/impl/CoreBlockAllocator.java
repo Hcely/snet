@@ -43,7 +43,7 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 		capacity = fixedCapacity(capacity);
 		if (capacity > MAX_ALLOCATE_CAPACITY) {
 			SNetResource resource = resourceManager.allocate(capacity);
-			return new DefResourceBlock(resource, 0, capacity);
+			return new DefResourceBlock(this, null, resource, 0, capacity);
 		} else {
 			return allocateImpl(capacity);
 		}
@@ -74,6 +74,15 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 
 	@Override
 	public synchronized void recycle(SNetResourceBlock block) {
+		if (block.getParent() == null) {
+			block.destroy();
+			block.getResource().destroy();
+		} else {
+			recycle0(block);
+		}
+	}
+
+	private synchronized void recycle0(SNetResourceBlock block) {
 		try {
 			BitmapResourceBlock bitmapBlock = (BitmapResourceBlock) block.getParent();
 			bitmapBlock.recycle(block);

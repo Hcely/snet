@@ -5,14 +5,12 @@ import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.MathUtil;
 
 class TreeResourceBlock extends BlockListNode<TreeResourceBlock> {
-	protected final SNetResourceBlockAllocator allocator;
 	protected final int cellCapacityShift;
 	protected final int levelNum;
 	protected final byte[] tree;
 
 	public TreeResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
-		super(rawBlock.getParent(), rawBlock, cellCapacity);
-		this.allocator = allocator;
+		super(allocator, rawBlock, cellCapacity);
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.levelNum = MathUtil.floorLog2(capacity) + 1 - cellCapacityShift;
 		this.remainCapacity = this.capacity;
@@ -34,7 +32,7 @@ class TreeResourceBlock extends BlockListNode<TreeResourceBlock> {
 		long offset = getChildResourceOff(idx, level);
 		capacity = getChildCapacity(level);
 		remainCapacity -= capacity;
-		return new DefResourceBlock(this, resource.slice(), offset, capacity);
+		return new DefResourceBlock(allocator, this, resource.slice(), offset, capacity);
 	}
 
 	@Override

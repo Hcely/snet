@@ -2,19 +2,19 @@ package com.snet.buffer.impl;
 
 import com.snet.buffer.SNetResource;
 import com.snet.buffer.SNetResourceBlock;
+import com.snet.buffer.SNetResourceBlockAllocator;
 
 public class DefResourceBlock implements SNetResourceBlock {
+	protected final SNetResourceBlockAllocator allocator;
 	protected final SNetResourceBlock parent;
 	protected final SNetResource resource;
 	protected final long resourceOff;
 	protected final int capacity;
 	protected boolean destroyed;
 
-	public DefResourceBlock(SNetResource resource, long resourceOff, int capacity) {
-		this(null, resource, resourceOff, capacity);
-	}
-
-	public DefResourceBlock(SNetResourceBlock parent, SNetResource resource, long resourceOff, int capacity) {
+	public DefResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock parent, SNetResource resource,
+			long resourceOff, int capacity) {
+		this.allocator = allocator;
 		this.parent = parent;
 		this.resource = resource;
 		this.resourceOff = resourceOff;
@@ -54,5 +54,8 @@ public class DefResourceBlock implements SNetResourceBlock {
 		return resourceOff;
 	}
 
-
+	@Override
+	public SNetResourceBlockAllocator getAllocator() {
+		return allocator;
+	}
 }

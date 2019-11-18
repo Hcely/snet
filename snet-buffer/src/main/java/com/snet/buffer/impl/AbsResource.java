@@ -85,7 +85,7 @@ public abstract class AbsResource implements SNetResource {
 		if (state != INITIALIZED)
 			return;
 		synchronized (this) {
-			if (state != INITIALIZED)
+			if (state != INITIALIZED && sliceCount.get() > 0)
 				return;
 			state = DESTROYED;
 			destroy0();

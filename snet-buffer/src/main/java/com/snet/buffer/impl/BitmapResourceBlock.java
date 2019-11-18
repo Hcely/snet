@@ -7,7 +7,6 @@ import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
 public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
-	protected final SNetResourceBlockAllocator allocator;
 	protected final int cellSize;
 	protected final int cellCapacityShift;
 	protected final Bitmap freeMap;
@@ -18,8 +17,7 @@ public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
 
 	private BitmapResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int capacity,
 			int cellCapacity) {
-		super(resource, 0, capacity, cellCapacity);
-		this.allocator = allocator;
+		super(allocator, resource, 0, capacity, cellCapacity);
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.cellSize = capacity >>> cellCapacityShift;
 		this.freeMap = new Bitmap(cellSize);
@@ -41,7 +39,7 @@ public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
 				freeMap.set(idx, cellCount, true);
 				this.remainCapacity -= newCapacity;
 				final long childResourceOff = resourceOff + (idx << cellCapacityShift);
-				return new DefResourceBlock(this, resource.slice(), childResourceOff, newCapacity);
+				return new DefResourceBlock(allocator, this, resource.slice(), childResourceOff, newCapacity);
 			}
 		}
 		return null;
@@ -57,6 +55,4 @@ public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
 			block.destroy();
 		}
 	}
-
-
 }

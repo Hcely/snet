@@ -3,6 +3,7 @@ package com.snet.buffer.impl;
 import com.snet.buffer.SNetAllocatableResourceBlock;
 import com.snet.buffer.SNetResource;
 import com.snet.buffer.SNetResourceBlock;
+import com.snet.buffer.SNetResourceBlockAllocator;
 
 abstract class BlockListNode<T extends BlockListNode<T>> extends DefResourceBlock
 		implements SNetAllocatableResourceBlock {
@@ -14,8 +15,9 @@ abstract class BlockListNode<T extends BlockListNode<T>> extends DefResourceBloc
 	protected final int hundredthCapacity;
 	protected final int cellCapacity;
 
-	public BlockListNode(SNetResource resource, long resourceOff, int capacity, int cellCapacity) {
-		super(resource, resourceOff, capacity);
+	public BlockListNode(SNetResourceBlockAllocator allocator, SNetResource resource, long resourceOff, int capacity,
+			int cellCapacity) {
+		super(allocator, null, resource, resourceOff, capacity);
 		this.rawBlock = null;
 		this.remainCapacity = capacity;
 		this.hundredthCapacity = capacity / 100;
@@ -23,8 +25,9 @@ abstract class BlockListNode<T extends BlockListNode<T>> extends DefResourceBloc
 	}
 
 
-	BlockListNode(SNetResourceBlock parent, SNetResourceBlock rawBlock, int cellCapacity) {
-		super(parent, rawBlock.getResource(), rawBlock.getResourceOff(), rawBlock.getCapacity());
+	BlockListNode(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
+		super(allocator, rawBlock.getParent(), rawBlock.getResource(), rawBlock.getResourceOff(),
+				rawBlock.getCapacity());
 		this.rawBlock = rawBlock;
 		this.remainCapacity = capacity;
 		this.hundredthCapacity = capacity / 100;
