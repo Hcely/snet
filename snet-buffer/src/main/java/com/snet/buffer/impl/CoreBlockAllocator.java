@@ -14,9 +14,9 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 	public static final int MAX_FREE_BLOCK = BLOCK_CAPACITY / CELL_CAPACITY;
 
 	@SuppressWarnings("unchecked")
-	private static BlockList<BitmapBlock>[] newBlockLists() {
-		BlockList<BitmapBlock> prev = new BlockList<>(0, 0);
-		BlockList<BitmapBlock>[] result = new BlockList[10];
+	private static BlockList<BitmapResourceBlock>[] newBlockLists() {
+		BlockList<BitmapResourceBlock> prev = new BlockList<>(0, 0);
+		BlockList<BitmapResourceBlock>[] result = new BlockList[10];
 		for (int i = 0; i < 10; ++i) {
 			result[i] = new BlockList<>(prev, (i + 1) * 10);
 			prev = result[i];
@@ -25,13 +25,17 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 	}
 
 	protected final SNetResourceManager resourceManager;
-	protected final FixedQueue<BitmapBlock> freeBlocks;
-	protected final BlockList<BitmapBlock>[] blockLists;
+	protected final FixedQueue<BitmapResourceBlock> freeBlocks;
+	protected final BlockList<BitmapResourceBlock>[] blockLists;
+	protected long lastAllocateTime;
+	protected long lastRecycleTime;
 
 	public CoreBlockAllocator(SNetResourceManager resourceManager) {
 		this.resourceManager = resourceManager;
 		this.freeBlocks = new FixedQueue<>(MAX_FREE_BLOCK);
 		this.blockLists = newBlockLists();
+		this.lastAllocateTime = System.currentTimeMillis();
+		this.lastRecycleTime = lastAllocateTime;
 	}
 
 	@Override
@@ -46,34 +50,41 @@ public class CoreBlockAllocator implements SNetResourceBlockAllocator, ResourceM
 	}
 
 	protected synchronized SNetResourceBlock allocateImpl(int capacity) {
-		SNetResourceBlock block = BlockList.allocate(blockLists, capacity);
-		if (block == null) {
-			BitmapBlock bitmapBlock = allocateBitmapBlock();
-			block = bitmapBlock.allocate(capacity);
-			blockLists[blockLists.length - 1].addBlock(bitmapBlock);
+		try {
+			SNetResourceBlock block = BlockList.allocate(blockLists, capacity);
+			if (block == null) {
+				BitmapResourceBlock bitmapBlock = allocateBitmapBlock();
+				block = bitmapBlock.allocate(capacity);
+				blockLists[blockLists.length - 1].addBlock(bitmapBlock);
+			}
+			return block;
+		} finally {
+			this.lastAllocateTime = System.currentTimeMillis();
 		}
-		return block;
 	}
 
-	private BitmapBlock allocateBitmapBlock() {
-		BitmapBlock bitmapBlock = freeBlocks.poll();
+	private BitmapResourceBlock allocateBitmapBlock() {
+		BitmapResourceBlock bitmapBlock = freeBlocks.poll();
 		if (bitmapBlock == null) {
 			SNetResource resource = resourceManager.allocate(BLOCK_CAPACITY);
-			bitmapBlock = new BitmapBlock(this, resource, CELL_CAPACITY);
+			bitmapBlock = new BitmapResourceBlock(this, resource, CELL_CAPACITY);
 		}
 		return bitmapBlock;
 	}
 
 	@Override
 	public synchronized void recycle(SNetResourceBlock block) {
-		BitmapBlock bitmapBlock = (BitmapBlock) block.getParent();
-		bitmapBlock.recycle(block);
-		bitmapBlock.list.addBlock(bitmapBlock);
+		try {
+			BitmapResourceBlock bitmapBlock = (BitmapResourceBlock) block.getParent();
+			bitmapBlock.recycle(block);
+			bitmapBlock.list.addBlock(bitmapBlock);
+		} finally {
+			this.lastRecycleTime = System.currentTimeMillis();
+		}
 	}
 
 	@Override
 	public int recycleResources() {
-
 		return 0;
 	}
 

@@ -1,11 +1,12 @@
 package com.snet.buffer.impl;
 
+import com.snet.ResourceManager;
 import com.snet.buffer.SNetResourceBlock;
 import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.MathUtil;
 import com.snet.util.coll.FixedQueue;
 
-public class MainBlockAllocator implements SNetResourceBlockAllocator {
+public class MainBlockAllocator implements SNetResourceBlockAllocator, ResourceManager {
 	public static final int ALLOCATE_BLOCK_CAPACITY = 1 << 20;
 	public static final int CELL_CAPACITY = 1 << 13;
 
@@ -26,11 +27,15 @@ public class MainBlockAllocator implements SNetResourceBlockAllocator {
 	protected final CoreBlockAllocator parentAllocator;
 	protected final FixedQueue<TreeResourceBlock> freeBlocks;
 	protected final BlockList<TreeResourceBlock>[] blockLists;
+	protected long lastAllocateTime;
+	protected long lastRecycleTime;
 
 	public MainBlockAllocator(CoreBlockAllocator parentAllocator) {
 		this.parentAllocator = parentAllocator;
-		this.freeBlocks = new FixedQueue<>(32);
+		this.freeBlocks = new FixedQueue<>(16);
 		this.blockLists = newBlockLists();
+		this.lastAllocateTime = System.currentTimeMillis();
+		this.lastRecycleTime = this.lastAllocateTime;
 	}
 
 	@Override
@@ -43,13 +48,17 @@ public class MainBlockAllocator implements SNetResourceBlockAllocator {
 	}
 
 	private synchronized SNetResourceBlock allocate0(int capacity) {
-		SNetResourceBlock block = BlockList.allocate(blockLists, capacity);
-		if (block == null) {
-			TreeResourceBlock treeBlock = allocateTreeBlock();
-			block = treeBlock.allocate(capacity);
-			blockLists[blockLists.length - 1].addBlock(treeBlock);
+		try {
+			SNetResourceBlock block = BlockList.allocate(blockLists, capacity);
+			if (block == null) {
+				TreeResourceBlock treeBlock = allocateTreeBlock();
+				block = treeBlock.allocate(capacity);
+				blockLists[blockLists.length - 1].addBlock(treeBlock);
+			}
+			return block;
+		} finally {
+			this.lastAllocateTime = System.currentTimeMillis();
 		}
-		return block;
 	}
 
 	private TreeResourceBlock allocateTreeBlock() {
@@ -63,9 +72,19 @@ public class MainBlockAllocator implements SNetResourceBlockAllocator {
 
 	@Override
 	public synchronized void recycle(SNetResourceBlock block) {
-		TreeResourceBlock treeBlock = (TreeResourceBlock) block.getParent();
-		treeBlock.recycle(block);
-		BlockList<TreeResourceBlock> blockList = treeBlock.list;
-		blockList.addBlock(treeBlock);
+		try {
+			TreeResourceBlock treeBlock = (TreeResourceBlock) block.getParent();
+			treeBlock.recycle(block);
+			BlockList<TreeResourceBlock> blockList = treeBlock.list;
+			blockList.addBlock(treeBlock);
+		} finally {
+			this.lastRecycleTime = System.currentTimeMillis();
+		}
+	}
+
+	@Override
+	public int recycleResources() {
+
+		return 0;
 	}
 }

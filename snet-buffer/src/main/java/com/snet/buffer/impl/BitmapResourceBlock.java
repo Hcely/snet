@@ -6,17 +6,17 @@ import com.snet.buffer.SNetResourceBlockAllocator;
 import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
-public class BitmapBlock extends BlockListNode<BitmapBlock> {
+public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final int cellSize;
 	protected final int cellCapacityShift;
 	protected final Bitmap freeMap;
 
-	public BitmapBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int cellCapacity) {
+	public BitmapResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int cellCapacity) {
 		this(allocator, resource, (int) MathUtil.floor2(resource.getCapacity()), cellCapacity);
 	}
 
-	private BitmapBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int capacity,
+	private BitmapResourceBlock(SNetResourceBlockAllocator allocator, SNetResource resource, int capacity,
 			int cellCapacity) {
 		super(resource, 0, capacity, cellCapacity);
 		this.allocator = allocator;
