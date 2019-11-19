@@ -34,14 +34,24 @@ public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
 			return null;
 		}
 		Bitmap freeMap = this.freeMap;
-		for (int idx = 0, size = cellSize, half = cellCount >>> 1; idx < size; ++idx) {
+		for (int idx = 0, size = cellSize - cellCount + 1, half = cellCount >>> 1; idx < size; ++idx) {
+			if (freeMap.equals(idx, true)) {
+				continue;
+			}
 			if (freeMap.equals(idx, cellCount, false)) {
 				freeMap.set(idx, cellCount, true);
 				this.remainCapacity -= newCapacity;
 				final long childResourceOff = resourceOff + (idx << cellCapacityShift);
 				return new DefResourceBlock(allocator, this, resource.slice(), childResourceOff, newCapacity);
-			} else if (half > 2 && freeMap.equals(idx + half, half, true)) {
-				idx += half;
+			} else if (half > 2) {
+				if (!freeMap.equals(idx + half, half, false)) {
+					idx += half;
+				}
+				while (++idx < size) {
+					if (freeMap.equals(idx, true)) {
+						break;
+					}
+				}
 			}
 		}
 		return null;
