@@ -19,8 +19,7 @@ public class Bitmap {
 	}
 
 	public static boolean equal(final long value, final long mask, final boolean b) {
-		final long l = value & mask;
-		return b ? (l == mask) : (l == 0);
+		return b ? ((value & mask) == mask) : ((value & mask) == 0);
 	}
 
 	public static long set(final long value, final long mask, final boolean b) {
