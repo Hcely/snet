@@ -28,21 +28,36 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 
 	@Override
 	public SNetResourceBlock allocate(int capacity) {
-		if (remainCapacity > 0) {
-			final Bitmap freeBitmap = this.freeBitmap;
-			final int len = cellSize, mark = len - 1;
-			int i = 0, idx = minIdx & mark;
-			for (; i < len; ++i, idx = (idx + 1) & mark) {
-				if (!freeBitmap.getSet(idx, true)) {
-					long cellOffset = getChildResourceOff(idx);
-					remainCapacity -= cellCapacity;
-					setMinIdx((idx + 1) & mark);
-					SNetResource resource = this.resource.slice();
-					return new DefResourceBlock(allocator, this, resource.slice(), cellOffset, cellCapacity);
+		if (remainCapacity < 1) {
+			return null;
+		}
+		final Bitmap freeBitmap = this.freeBitmap;
+		final int len = cellSize;
+		int idx = minIdx & (len - 1);
+		if (!freeBitmap.getSet(idx, true)) {
+			return allocate0(idx);
+		}
+		for (idx = 0; idx < len; ) {
+			if (freeBitmap.equals(idx, 8, true)) {
+				idx += 8;
+			} else {
+				while (idx < len) {
+					if (!freeBitmap.getSet(idx, true)) {
+						return allocate0(idx);
+					}
+					++idx;
 				}
 			}
 		}
 		return null;
+	}
+
+	private SNetResourceBlock allocate0(int idx) {
+		long cellOffset = getChildResourceOff(idx);
+		remainCapacity -= cellCapacity;
+		setMinIdx(idx + 1);
+		SNetResource resource = this.resource.slice();
+		return new DefResourceBlock(allocator, this, resource.slice(), cellOffset, cellCapacity);
 	}
 
 	@Override
