@@ -147,6 +147,10 @@ public class Bitmap {
 		return true;
 	}
 
+	public boolean equalsMask(final int mapIdx, final long mask, final boolean b) {
+		return mapIdx < map.length && equal(map[mapIdx], mask, b);
+	}
+
 	public void set(final int idx, int len, final boolean b) {
 		ensureCapacity(idx + len);
 		final long[] map = this.map;

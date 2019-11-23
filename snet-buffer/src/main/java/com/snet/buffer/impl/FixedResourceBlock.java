@@ -7,6 +7,7 @@ import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
 class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
+	public static final long EQUAL_MASK = 0xFFL << 56;
 	protected final SNetResourceBlockAllocator allocator;
 	protected final int cellSize;
 	protected final int cellCapacityShift;
@@ -37,9 +38,14 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 		if (!freeBitmap.getSet(idx, true)) {
 			return allocate0(idx);
 		}
+		long equalMask = EQUAL_MASK;
 		for (idx = 0; idx < len; ) {
-			if (freeBitmap.equals(idx, 8, true)) {
+			if (freeBitmap.equalsMask(idx >>> 6, equalMask, true)) {
 				idx += 8;
+				equalMask >>>= 8;
+				if (equalMask == 0) {
+					equalMask = EQUAL_MASK;
+				}
 			} else {
 				while (idx < len) {
 					if (!freeBitmap.getSet(idx, true)) {
