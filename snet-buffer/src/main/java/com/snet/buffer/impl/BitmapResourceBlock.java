@@ -7,6 +7,7 @@ import com.snet.util.Bitmap;
 import com.snet.util.MathUtil;
 
 public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
+	public static final long EQUAL_MASK = 0xFFL << 56;
 	protected final int cellSize;
 	protected final int cellCapacityShift;
 	protected final Bitmap freeMap;
@@ -35,9 +36,6 @@ public class BitmapResourceBlock extends BlockListNode<BitmapResourceBlock> {
 		}
 		Bitmap freeMap = this.freeMap;
 		for (int idx = 0, size = cellSize - cellCount + 1, half = cellCount >>> 1; idx < size; ++idx) {
-			if (freeMap.equals(idx, true)) {
-				continue;
-			}
 			if (freeMap.equals(idx, cellCount, false)) {
 				freeMap.set(idx, cellCount, true);
 				this.remainCapacity -= newCapacity;

@@ -11,7 +11,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 	protected final SNetResourceBlockAllocator allocator;
 	protected final int cellSize;
 	protected final int cellCapacityShift;
-	protected final Bitmap freeBitmap;
+	protected final Bitmap freeMap;
 	protected int minIdx;
 
 	public FixedResourceBlock(SNetResourceBlockAllocator allocator, SNetResourceBlock rawBlock, int cellCapacity) {
@@ -19,7 +19,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 		this.allocator = allocator;
 		this.cellCapacityShift = MathUtil.ceilLog2(cellCapacity);
 		this.cellSize = this.capacity >>> cellCapacityShift;
-		this.freeBitmap = new Bitmap(cellSize);
+		this.freeMap = new Bitmap(cellSize);
 		this.minIdx = 0;
 	}
 
@@ -32,15 +32,15 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 		if (remainCapacity < 1) {
 			return null;
 		}
-		final Bitmap freeBitmap = this.freeBitmap;
+		final Bitmap freeMap = this.freeMap;
 		final int len = cellSize;
 		int idx = minIdx;
-		if (!freeBitmap.getSet(idx, true)) {
+		if (!freeMap.getSet(idx, true)) {
 			return allocate0(idx);
 		}
 		long equalMask = EQUAL_MASK;
 		for (idx = 0; idx < len; ) {
-			if (freeBitmap.equalsMask(idx >>> 6, equalMask, true)) {
+			if (freeMap.equalsMask(idx >>> 6, equalMask, true)) {
 				idx += 8;
 				equalMask >>>= 8;
 				if (equalMask == 0) {
@@ -48,7 +48,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 				}
 			} else {
 				while (idx < len) {
-					if (!freeBitmap.getSet(idx, true)) {
+					if (!freeMap.getSet(idx, true)) {
 						return allocate0(idx);
 					}
 					++idx;
@@ -70,7 +70,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 	public void recycle(SNetResourceBlock block) {
 		if (!block.isDestroyed() && block.getParent() == this) {
 			final int idx = getIdx(block.getResourceOff());
-			freeBitmap.set(idx, false);
+			freeMap.set(idx, false);
 			setMinIdx(idx);
 			remainCapacity += cellCapacity;
 			block.destroy();
