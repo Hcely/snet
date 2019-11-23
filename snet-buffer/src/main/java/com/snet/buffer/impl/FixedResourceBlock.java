@@ -34,7 +34,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 		}
 		final Bitmap freeBitmap = this.freeBitmap;
 		final int len = cellSize;
-		int idx = minIdx & (len - 1);
+		int idx = minIdx;
 		if (!freeBitmap.getSet(idx, true)) {
 			return allocate0(idx);
 		}
@@ -78,7 +78,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 	}
 
 	protected long getChildResourceOff(int idx) {
-		return resourceOff + idx << cellCapacityShift;
+		return resourceOff + (idx << cellCapacityShift);
 	}
 
 	protected int getIdx(long offset) {
@@ -86,6 +86,7 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 	}
 
 	protected void setMinIdx(int idx) {
+		idx &= (cellSize - 1);
 		int startIdx = this.minIdx;
 		this.minIdx = idx < startIdx ? idx : startIdx;
 	}
