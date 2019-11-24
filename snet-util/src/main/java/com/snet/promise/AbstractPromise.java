@@ -23,14 +23,13 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		final long expireTime = timeout < 0 ? Long.MAX_VALUE : (System.currentTimeMillis() + timeout);
 		long t;
 		while (true) {
-			if (isFinish())
+			if (expireTime < System.currentTimeMillis() || isFinish())
 				break;
 			synchronized (this) {
 				if ((t = expireTime - System.currentTimeMillis()) < 1 || isFinish())
 					break;
 				this.wait(t < 100 ? t : 100);
 			}
-
 		}
 		return (T) this;
 	}

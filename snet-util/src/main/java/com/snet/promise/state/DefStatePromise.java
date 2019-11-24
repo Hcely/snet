@@ -40,7 +40,7 @@ public class DefStatePromise implements StatePromise<DefStatePromise> {
 		final long expireTime = timeout < 0 ? Long.MAX_VALUE : (System.currentTimeMillis() + timeout);
 		long t;
 		while (true) {
-			if (isState(state))
+			if (expireTime < System.currentTimeMillis() || isState(state))
 				break;
 			synchronized (this) {
 				if ((t = expireTime - System.currentTimeMillis()) < 1 || isState(state))
