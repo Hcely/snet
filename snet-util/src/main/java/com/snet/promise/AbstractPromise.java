@@ -1,6 +1,7 @@
 package com.snet.promise;
 
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public abstract class AbstractPromise<T extends AbstractPromise<?>> implements Promise<T> {
@@ -21,15 +22,20 @@ public abstract class AbstractPromise<T extends AbstractPromise<?>> implements P
 		if (isFinish())
 			return (T) this;
 		final long expireTime = timeout < 0 ? Long.MAX_VALUE : (System.currentTimeMillis() + timeout);
-		long t;
-		while (true) {
-			if (expireTime < System.currentTimeMillis() || isFinish())
-				break;
-			synchronized (this) {
-				if ((t = expireTime - System.currentTimeMillis()) < 1 || isFinish())
-					break;
-				this.wait(t < 100 ? t : 100);
+		long t, count = 0;
+		while (System.currentTimeMillis() < expireTime && !isFinish()) {
+			if (count > 10 && count < 30) {
+				Thread.yield();
+			} else if (count < 50) {
+				LockSupport.parkNanos(100000);
+			} else {
+				synchronized (this) {
+					if ((t = expireTime - System.currentTimeMillis()) > 0 && !isFinish()) {
+						this.wait(t < 100 ? t : 100);
+					}
+				}
 			}
+			++count;
 		}
 		return (T) this;
 	}

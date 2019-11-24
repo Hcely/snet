@@ -6,6 +6,7 @@ import com.snet.util.coll.IntHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 
 public class DefStatePromise implements StatePromise<DefStatePromise> {
 	protected static final AtomicIntegerFieldUpdater<DefStatePromise> STATE_UPDATER = AtomicIntegerFieldUpdater
@@ -38,15 +39,20 @@ public class DefStatePromise implements StatePromise<DefStatePromise> {
 		if (isState(state))
 			return this;
 		final long expireTime = timeout < 0 ? Long.MAX_VALUE : (System.currentTimeMillis() + timeout);
-		long t;
-		while (true) {
-			if (expireTime < System.currentTimeMillis() || isState(state))
-				break;
-			synchronized (this) {
-				if ((t = expireTime - System.currentTimeMillis()) < 1 || isState(state))
-					break;
-				this.wait(t < 100 ? t : 100);
+		long t, count = 0;
+		while (System.currentTimeMillis() < expireTime && !isState(state)) {
+			if (count > 10 && count < 30) {
+				Thread.yield();
+			} else if (count < 50) {
+				LockSupport.parkNanos(100000);
+			} else {
+				synchronized (this) {
+					if ((t = expireTime - System.currentTimeMillis()) > 0 && !isState(state)) {
+						this.wait(t < 100 ? t : 100);
+					}
+				}
 			}
+			++count;
 		}
 		return this;
 	}
