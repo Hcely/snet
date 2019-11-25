@@ -39,12 +39,14 @@ class FixedResourceBlock extends BlockListNode<FixedResourceBlock> {
 			return allocate0(idx);
 		}
 		long equalMask = EQUAL_MASK;
+		int mapIdx = 0;
 		for (idx = 0; idx < len; ) {
-			if (freeMap.equalsMask(idx >>> 6, equalMask, true)) {
+			if (freeMap.equalsMask(mapIdx, equalMask, true)) {
 				idx += 8;
 				equalMask >>>= 8;
 				if (equalMask == 0) {
 					equalMask = EQUAL_MASK;
+					++mapIdx;
 				}
 			} else {
 				while (idx < len) {
